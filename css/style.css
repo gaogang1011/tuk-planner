@@ -98,3 +98,98 @@ button { cursor: pointer; }
 @media (max-width: 760px) {
   .columns { grid-template-columns: 1fr; }
 }
+
+.panel-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.panel-title + .items, .panel-title + .empty { margin-bottom: 22px; }
+
+.items { list-style: none; margin: 0; padding: 0; }
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.item:first-child { border-top: 0; }
+
+.item-check {
+  width: 18px;
+  height: 18px;
+  margin: 3px 0 0;
+  accent-color: var(--accent);
+  flex: none;
+}
+
+.item-body { flex: 1; min-width: 0; display: grid; gap: 2px; }
+
+.item-title { font-weight: 600; overflow-wrap: anywhere; }
+
+.item-meta { font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+
+.kind {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.kind-event { background: var(--accent-soft); color: var(--accent); }
+
+.kind-task { background: var(--free-soft); color: var(--free); }
+
+.item.is-done .item-title { text-decoration: line-through; color: var(--muted); }
+
+.item-del {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 2px 4px;
+  opacity: 0.6;
+}
+
+.item-del:hover, .item-del:focus-visible { opacity: 1; color: var(--due); }
+
+.empty { color: var(--muted); margin: 0; font-size: 14px; }
+
+.manual { margin-top: 8px; }
+
+.manual summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 14px; }
+
+.manual-form {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.manual-form input, .manual-form select {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+.manual-form input[name="title"] { grid-column: 2; }
+
+.manual-form input[name="when"] { grid-column: 1 / -1; }
+
+.btn {
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  padding: 9px 16px;
+}
+
+.manual-form .btn { grid-column: 1 / -1; }
