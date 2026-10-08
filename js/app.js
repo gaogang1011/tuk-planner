@@ -30,7 +30,7 @@
     } else if (v === "week") {
       Tuk.week.render(viewWeek);
     } else {
-      cal.renderMonth(viewMonth);
+      Tuk.month.render(viewMonth);
     }
   }
 
@@ -56,6 +56,7 @@
   });
   Tuk.detail.mount();
   Tuk.week.bind(viewWeek);
+  Tuk.month.bind(viewMonth);
   cal.bindNav(viewWeek);
   cal.bindNav(viewMonth);
   cal.subscribe(render);

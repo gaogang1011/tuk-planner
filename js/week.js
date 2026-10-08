@@ -60,14 +60,15 @@ Tuk.week = (function () {
     days.forEach((d, i) => {
       const key = fmt.dayKey(d);
       const isToday = key === fmt.dayKey(now);
-      const dayClass = (i === 5 ? " is-sat" : "") + (i === 6 ? " is-sun" : "") + (isToday ? " is-today" : "");
+      const holiday = Tuk.holidays.get(key);
+      const dayClass = (i === 5 ? " is-sat" : "") + (i === 6 || holiday ? " is-sun" : "") + (isToday ? " is-today" : "");
       const dayTimed = occ.filter(o => o.kind === "event" && !o.allDay && fmt.dayKey(o.start) === key);
       const busyMin = dayTimed.reduce((sum, o) => sum + (o.end - o.start) / 60000, 0);
       const load = dayTimed.length ? "일정 " + dayTimed.length + " · " + fmt.duration(busyMin * 60000) : "비어 있음";
       const loadPct = Math.min(100, busyMin / (10 * 60) * 100);
       head += '<div class="wk-dayhead' + dayClass + '" data-day="' + key + '">' +
         '<div class="wk-daytop"><span class="wk-dow">' + WEEK[i] + '</span><span class="wk-date">' + d.getDate() + "</span></div>" +
-        '<span class="wk-load">' + load + "</span>" +
+        '<span class="wk-load">' + (holiday ? '<span class="wk-holiday">' + holiday + "</span> " : "") + load + "</span>" +
         '<span class="wk-loadbar" aria-hidden="true"><span style="width:' + loadPct + '%"></span></span>' +
       "</div>";
       const chips = occ.filter(o => o.allDay && fmt.dayKey(o.start) === key).map(o => {
