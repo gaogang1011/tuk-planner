@@ -3,7 +3,7 @@ window.Tuk = window.Tuk || {};
 Tuk.parser = (function () {
   const DAYS = { "일": 0, "월": 1, "화": 2, "수": 3, "목": 4, "금": 5, "토": 6 };
 
-  const EVENT_WORDS = /(회의|미팅|면담|약속|수업|세미나|발표|상담|만남|모임|스터디|면접|OT|오티|진료|강의|워크숍|행사|식사|밥|통화|인터뷰|시험|회식|출장|데이트|레슨|진료|병원|미용실)/i;
+  const EVENT_WORDS = /(회의|미팅|면담|약속|수업|세미나|발표|상담|만남|모임|스터디|면접|OT|오티|진료|강의|워크숍|행사|식사|밥|통화|인터뷰|시험|고사|중간고사|기말고사|회식|출장|데이트|레슨|진료|병원|미용실)/i;
   const TASK_WORDS = /(하기|해야|제출|마감|정리|작성|준비|보내|답장|확인|검토|수정|읽기|공부|과제|업로드|신청|구매|사기|챙기|연락|예약하|찾아보|만들기|복습|예습|끝내)/;
   const BEFORE_WORDS = /^\s*(그\s*전에|그전에|전에|미리|사전에)\s*/;
   const AFTER_WORDS = /^\s*(끝나고|끝난\s*(후에?|뒤에?)|그\s*다음에?|이후에?|그\s*후에?|다녀와서)\s*/;
@@ -159,6 +159,16 @@ Tuk.parser = (function () {
       .filter(Boolean);
   }
 
+  const NUM_WORDS = [["열두", 12], ["열한", 11], ["열", 10], ["아홉", 9], ["여덟", 8], ["일곱", 7], ["여섯", 6], ["다섯", 5], ["네", 4], ["세", 3], ["두", 2], ["한", 1]];
+
+  function normalize(text) {
+    let t = text.replace(/([월화수목금토일])욜/g, "$1요일");
+    NUM_WORDS.forEach(([w, n]) => {
+      t = t.replace(new RegExp("(^|[\\s오전후아침저녁밤새벽점심낮])" + w + "\\s*시(?!간)", "g"), "$1" + n + "시");
+    });
+    return t;
+  }
+
   function parseClause(raw, now, prev) {
     const relBefore = BEFORE_WORDS.test(raw);
     const relAfter = AFTER_WORDS.test(raw);
@@ -217,7 +227,7 @@ Tuk.parser = (function () {
 
   function parse(text, now) {
     const base = now || new Date();
-    const clauses = splitClauses(String(text || ""));
+    const clauses = splitClauses(normalize(String(text || "")));
     const items = [];
     let prev = null;
     clauses.forEach(c => {
@@ -238,7 +248,7 @@ Tuk.parser = (function () {
     const me = (myName || "").trim();
     const out = [];
     String(text || "").split(/\n+/).forEach(line => {
-      let body = line.replace(BULLET, "").trim();
+      let body = normalize(line.replace(BULLET, "").trim());
       if (!body) return;
       let owner = null;
       const om = body.match(OWNER);
