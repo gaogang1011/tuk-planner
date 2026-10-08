@@ -3,8 +3,19 @@ window.Tuk = window.Tuk || {};
 Tuk.widget = (function () {
   const { fmt } = Tuk;
   const SIZE = { width: 320, height: 480 };
+  const MINI = { width: 320, height: 76 };
+  const MINI_KEY = "tuk.widget.mini.v1";
   let pip = null;
   let root = null;
+  let mini = false;
+
+  try { mini = localStorage.getItem(MINI_KEY) === "1"; } catch (e) {}
+
+  const ICON = {
+    fold: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 12.5 10 7.5l5 5"/></svg>',
+    unfold: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 7.5 10 12.5l5-5"/></svg>',
+    close: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/></svg>'
+  };
 
   function supported() {
     return "documentPictureInPicture" in window;
@@ -30,7 +41,11 @@ Tuk.widget = (function () {
 
   function shell() {
     root.innerHTML =
-      '<header class="wg-head"><span class="brand">툭</span><span class="wg-clock" data-w="clock"></span></header>' +
+      '<header class="wg-head"><span class="brand">툭</span><span class="wg-clock" data-w="clock"></span>' +
+        '<button type="button" class="ic" data-w="fold"></button>' +
+        '<button type="button" class="ic" data-w="close" aria-label="위젯 닫기" title="위젯 닫기">' + ICON.close + "</button>" +
+      "</header>" +
+      '<button type="button" class="wg-bar" data-w="bar" aria-label="위젯 펼치기"></button>' +
       '<section class="wg-next" data-w="next"></section>' +
       '<section class="wg-sec"><h3 class="rp-title">오늘 남은 일정</h3><div data-w="events"></div></section>' +
       '<section class="wg-sec"><h3 class="rp-title">할 일</h3><div data-w="tasks"></div></section>' +
@@ -41,6 +56,8 @@ Tuk.widget = (function () {
       if (id) Tuk.store.toggle(id);
     });
     root.addEventListener("click", e => {
+      if (e.target.closest('[data-w="fold"], [data-w="bar"]')) { setMini(!mini); return; }
+      if (e.target.closest('[data-w="close"]')) { close(); return; }
       const o = e.target.closest("[data-open]");
       if (o) {
         Tuk.detail.open(o.dataset.open);
@@ -68,6 +85,26 @@ Tuk.widget = (function () {
     });
   }
 
+  function setMini(v) {
+    mini = v;
+    try { localStorage.setItem(MINI_KEY, v ? "1" : "0"); } catch (e) {}
+    applyMini();
+    if (pip) {
+      const size = v ? MINI : SIZE;
+      try { pip.resizeTo(size.width, size.height); } catch (e) {}
+    }
+    render();
+  }
+
+  function applyMini() {
+    if (!root) return;
+    root.classList.toggle("is-mini", mini);
+    const fold = part("fold");
+    fold.innerHTML = mini ? ICON.unfold : ICON.fold;
+    fold.setAttribute("aria-label", mini ? "위젯 펼치기" : "위젯 접기");
+    fold.title = mini ? "펼치기" : "접기";
+  }
+
   function part(name) {
     return root && root.querySelector('[data-w="' + name + '"]');
   }
@@ -77,6 +114,13 @@ Tuk.widget = (function () {
     const now = new Date();
     const st = Tuk.now.status(now);
     const next = st.current || st.next;
+    const bar = part("bar");
+    if (next) {
+      const left = fmt.duration((st.current ? next.end : next.start) - now);
+      bar.innerHTML = '<span class="wg-bar-k">' + (st.current ? "진행 중" : "다음 " + fmt.time(next.start)) + '</span><span class="wg-bar-t">' + fmt.escape(next.item.title) + '</span><span class="wg-bar-l">' + (st.current ? left + " 남음" : left) + "</span>";
+    } else {
+      bar.innerHTML = '<span class="wg-bar-t">남은 일정이 없어요</span>';
+    }
     part("clock").textContent = now.toLocaleString("ko-KR", { month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit" });
     part("next").innerHTML = next
       ? '<p class="wg-kicker">' + (st.current ? "지금 진행 중 · 남은 시간" : "다음 일정까지") + '</p><p class="wg-big">' + fmt.duration((st.current ? next.end : next.start) - now) + '</p><p class="wg-sub">' + fmt.escape((st.current ? fmt.time(next.start) + "–" + fmt.time(next.end) : fmt.shortDate(next.start)) + " · " + next.item.title) + "</p>"
@@ -112,7 +156,7 @@ Tuk.widget = (function () {
       return;
     }
     try {
-      pip = await window.documentPictureInPicture.requestWindow(SIZE);
+      pip = await window.documentPictureInPicture.requestWindow(mini ? MINI : SIZE);
     } catch (err) {
       pip = null;
       if (Tuk.drag) Tuk.drag.toast("위젯을 열지 못했어요. 버튼을 다시 눌러 주세요.");
@@ -127,6 +171,7 @@ Tuk.widget = (function () {
     root.className = "wg";
     doc.body.appendChild(root);
     shell();
+    applyMini();
     pip.addEventListener("pagehide", () => {
       pip = null;
       root = null;
@@ -149,5 +194,5 @@ Tuk.widget = (function () {
     syncButtons();
   }
 
-  return { mount, open, close, render, supported, isOpen: () => Boolean(pip) };
+  return { mount, open, close, render, supported, setMini, isOpen: () => Boolean(pip), isMini: () => mini };
 })();
