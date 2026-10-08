@@ -116,6 +116,18 @@ Tuk.capture = (function () {
     );
   }
 
+  function afterAdd(added) {
+    if (!added.length) return;
+    const dated = added.map(it => fmt.parse(it.type === "event" ? it.start : it.due)).filter(Boolean).sort((a, b) => a - b);
+    const ids = added.map(it => it.id);
+    if (dated.length && Tuk.cal && Tuk.cal.state.view !== "today") {
+      Tuk.cal.goTo(dated[0], ids);
+    }
+    if (Tuk.drag) {
+      Tuk.drag.toast(added.length + "개 추가했어요" + (dated.length ? " · " + fmt.shortDate(dated[0]).replace(/\s\d{2}:\d{2}$/, "") + (dated.length > 1 ? " 외" : "") : ""));
+    }
+  }
+
   function conflictHtml(it) {
     if (it.type !== "event" || !Tuk.cal) return "";
     const hits = Tuk.cal.conflicts(it, 50);
@@ -199,7 +211,8 @@ Tuk.capture = (function () {
         renderPreview();
       } else if (act === "commit") {
         const source = mode === "memo" ? "meeting" : "quick";
-        store.addMany(pending.filter(it => it.pick).map(it => Object.assign({ source }, it)));
+        const added = store.addMany(pending.filter(it => it.pick).map(it => Object.assign({ source }, it)));
+        afterAdd(added);
         pending = [];
         renderPreview();
         const field = root.querySelector("#quickInput, #memoInput");

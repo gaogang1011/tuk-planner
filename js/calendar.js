@@ -130,15 +130,16 @@ Tuk.cal = (function () {
   function goTo(date, ids) {
     state.cursor = fmt.startOfDay(date);
     state.selected = fmt.dayKey(date);
-    state.highlight = ids || [];
-    emit();
-    setTimeout(() => { state.highlight = []; }, 2500);
+    flash(ids);
   }
+
+  let flashTimer = null;
 
   function flash(ids) {
     state.highlight = ids || [];
     emit();
-    setTimeout(() => { state.highlight = []; }, 2500);
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => { state.highlight = []; emit(); }, 2500);
   }
 
   function select(key) {

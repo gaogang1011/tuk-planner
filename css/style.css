@@ -1003,3 +1003,11 @@ body.dragging { cursor: grabbing; user-select: none; }
 }
 
 .toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+
+@keyframes pop { 0% { transform: scale(0.96); } 60% { transform: scale(1.03); } 100% { transform: scale(1); } }
+
+.wk-ev.is-new, .wk-chip.is-new, .mo-chip.is-new { animation: pop 0.45s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wk-ev.is-new, .wk-chip.is-new, .mo-chip.is-new { animation: none; }
+}
