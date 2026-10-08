@@ -109,6 +109,7 @@
   });
 
   Tuk.sidebar.mount(miniCal, sbTasks);
+  Tuk.palette.mount();
   Tuk.settings.mount(document.getElementById("openSettings"));
   Tuk.capture.mount(capture);
   Tuk.now.bindPanel(panel);

@@ -227,5 +227,16 @@ Tuk.capture = (function () {
     bind();
   }
 
-  return { mount, analyzeLine };
+  function setMode(m) {
+    if (m !== mode) {
+      mode = m;
+      pending = [];
+      lastError = "";
+      render();
+    }
+    const field = root.querySelector("#quickInput, #memoInput");
+    if (field) field.focus();
+  }
+
+  return { mount, analyzeLine, afterAdd, setMode };
 })();
