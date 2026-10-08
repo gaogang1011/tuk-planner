@@ -14,7 +14,7 @@
     views.renderList(upcoming);
   }
 
-  views.bindList(upcoming);
+  views.bindList(upcoming, render);
   store.subscribe(render);
   render();
   tick();
