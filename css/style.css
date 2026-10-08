@@ -398,3 +398,29 @@ button { cursor: pointer; }
 .capture-error { margin: 0; font-size: 14px; color: var(--due); }
 
 .capture-error:not(:empty) { margin-top: 10px; }
+
+.preview-row { grid-template-columns: auto auto 1fr auto auto; }
+
+.p-pick { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+
+.p-title-wrap { display: flex; align-items: center; gap: 6px; min-width: 0; }
+
+.p-title-wrap .p-title { flex: 1; }
+
+.owner {
+  flex: none;
+  font-size: 12px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.preview-row.is-off .p-title, .preview-row.is-off .p-when, .preview-row.is-off .kind { opacity: 0.45; }
+
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 760px) {
+  .preview-row { grid-template-columns: auto auto 1fr auto; }
+  .preview-row .p-when { grid-column: 2 / -1; grid-row: 2; }
+}

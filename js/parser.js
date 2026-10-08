@@ -138,7 +138,10 @@ Tuk.parser = (function () {
       .replace(/(까지|쯤|경에?)(?=\s|$)/g, "")
       .replace(/\s*(해야\s*(함|해|됨|돼|한다|할\s*듯)?|하기|할\s*것|하자|하자고)\s*[.!]*$/, "")
       .replace(/^\s*(에|은|는|이|가|을|를)\s+/, "")
+      .replace(/(^|\s)(다\s*같이|같이|모두|전원|다들)(?=\s|$)/g, " ")
+      .replace(/(^|\s)(오전|오후|아침|저녁|밤|새벽|점심|낮)(까지|에|쯤)?(?=\s|$)/g, " ")
       .replace(/[.!]+$/, "")
+      .replace(/([가-힣]{2,})(은|는)\s*$/, "$1")
       .replace(/\s{2,}/g, " ")
       .trim();
   }
@@ -225,5 +228,37 @@ Tuk.parser = (function () {
     return items;
   }
 
-  return { parse };
+  const BULLET = /^\s*(?:[-*•·▪◦]|\d+[.)]|\[\s?\]|☐)\s*/;
+  const OWNER = /^([가-힣A-Za-z][가-힣A-Za-z0-9 ]{0,9}?)\s*(?:님)?\s*[:：]\s*(.+)$/;
+  const SIGNAL = /(\d{1,2}\s*시|\d{1,2}\s*:\s*\d{2}|오늘|내일|모레|글피|요일|주말|다음\s*주|담주|\d{1,2}\s*월\s*\d{1,2}\s*일|\d{1,2}\s*\/\s*\d{1,2})/;
+  const TOGETHER = /(다\s*같이|같이|모두|전원|다들|우리)/;
+
+  function extractMemo(text, now, myName) {
+    const base = now || new Date();
+    const me = (myName || "").trim();
+    const out = [];
+    String(text || "").split(/\n+/).forEach(line => {
+      let body = line.replace(BULLET, "").trim();
+      if (!body) return;
+      let owner = null;
+      const om = body.match(OWNER);
+      if (om && !SIGNAL.test(om[1])) {
+        owner = om[1].trim();
+        body = om[2].trim();
+      }
+      const hasTask = TASK_WORDS.test(body) || /까지/.test(body);
+      const hasEvent = EVENT_WORDS.test(body) && /\d{1,2}\s*시(?!간)|\d{1,2}\s*:\s*\d{2}|정오/.test(body);
+      if (!hasTask && !hasEvent) return;
+      const items = parse(body, base);
+      const mine = !owner || TOGETHER.test(owner) || (me && (owner.includes(me) || me.includes(owner)));
+      items.forEach(it => {
+        if (owner) it.owner = owner;
+        it.mine = it.type === "event" ? true : Boolean(mine);
+        out.push(it);
+      });
+    });
+    return out;
+  }
+
+  return { parse, extractMemo };
 })();

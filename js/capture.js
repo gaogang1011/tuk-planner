@@ -27,18 +27,18 @@ Tuk.capture = (function () {
   async function analyzeMemo(text) {
     lastError = "";
     const cfg = Tuk.settings.effective();
-    if (!cfg.enabled) {
-      lastError = "회의 메모 정리는 AI 연결이 필요해요. 설정에서 AI를 연결해 주세요.";
-      return { items: [], source: "none" };
+    const now = new Date();
+    let result;
+    if (cfg.enabled) {
+      try {
+        result = { items: await Tuk.ai.extractMemo(cfg, text, now), source: "ai" };
+      } catch (err) {
+        lastError = err.message;
+      }
     }
-    try {
-      const items = await Tuk.ai.extractMemo(cfg, text, new Date());
-      if (!items.length) lastError = "메모에서 할 일이나 일정을 찾지 못했어요.";
-      return { items, source: "ai" };
-    } catch (err) {
-      lastError = err.message;
-      return { items: [], source: "none" };
-    }
+    if (!result) result = { items: parser.extractMemo(text, now, cfg.myName), source: cfg.enabled ? "rule-fallback" : "rule" };
+    if (!result.items.length) lastError = "메모에서 할 일이나 일정을 찾지 못했어요. 할 일은 \"~하기\", \"~까지\"처럼 적으면 더 잘 찾아요.";
+    return result;
   }
 
   function sourceLabel(src) {
@@ -89,21 +89,25 @@ Tuk.capture = (function () {
       box.innerHTML = "";
       return;
     }
+    const picked = pending.filter(it => it.pick).length;
+    const others = pending.some(it => it.mine === false);
     box.innerHTML =
-      '<p class="preview-note">' + sourceLabel(pendingSource) + ". 확인하고 추가하세요.</p>" +
+      '<p class="preview-note">' + sourceLabel(pendingSource) + ". " + (others ? "다른 사람이 맡은 일은 빼 두었어요" + (Tuk.settings.effective().myName ? ". " : " (설정에 내 이름을 넣으면 내 일을 알아봐요). ") : "") + "확인하고 추가하세요.</p>" +
       '<ul class="preview-list">' + pending.map(previewRow).join("") + "</ul>" +
       '<div class="preview-actions">' +
         '<button type="button" class="btn-ghost" data-act="cancel">취소</button>' +
-        '<button type="button" class="btn" data-act="commit">' + pending.length + "개 추가</button>" +
+        '<button type="button" class="btn" data-act="commit"' + (picked ? "" : " disabled") + ">" + picked + "개 추가</button>" +
       "</div>";
   }
 
   function previewRow(it, i) {
     const when = it.type === "event" ? it.start : it.due;
     return (
-      '<li class="preview-row" data-i="' + i + '">' +
+      '<li class="preview-row' + (it.pick ? "" : " is-off") + '" data-i="' + i + '">' +
+        '<input type="checkbox" class="p-pick" data-field="pick" aria-label="추가할 항목" ' + (it.pick ? "checked" : "") + ">" +
         '<button type="button" class="kind kind-' + it.type + ' kind-toggle" data-act="toggle" title="일정/할 일 바꾸기">' + (it.type === "event" ? "일정" : "할 일") + "</button>" +
-        '<input class="p-title" data-field="title" value="' + fmt.escape(it.title) + '" aria-label="제목">' +
+        '<span class="p-title-wrap"><input class="p-title" data-field="title" value="' + fmt.escape(it.title) + '" aria-label="제목">' +
+          (it.owner ? '<span class="owner">' + fmt.escape(it.owner) + " 담당</span>" : "") + "</span>" +
         '<input class="p-when" type="datetime-local" data-field="when" value="' + fmt.escape(when || "") + '" aria-label="' + (it.type === "event" ? "시작 시간" : "마감") + '">' +
         '<button type="button" class="p-del" data-act="drop" aria-label="빼기">빼기</button>' +
       "</li>"
@@ -118,9 +122,9 @@ Tuk.capture = (function () {
     go.textContent = "정리 중…";
     try {
       const r = await analyze(text);
-      pending = r.items;
+      pending = r.items.map(it => Object.assign({ pick: it.mine !== false }, it));
       pendingSource = r.source;
-      if (!pending.length && fallbackOne) pending = [{ type: "task", title: text.trim() }];
+      if (!pending.length && fallbackOne) pending = [{ type: "task", title: text.trim(), pick: true }];
       if (pending.length) {
         const field = root.querySelector("#quickInput, #memoInput");
         if (field) field.value = "";
@@ -143,6 +147,7 @@ Tuk.capture = (function () {
       if (!row) return;
       const it = pending[+row.dataset.i];
       if (e.target.dataset.field === "title") it.title = e.target.value;
+      if (e.target.dataset.field === "pick") { it.pick = e.target.checked; renderPreview(); }
       if (e.target.dataset.field === "when") {
         const v = e.target.value || null;
         if (it.type === "event") { it.start = v; it.allDay = false; it.end = null; } else it.due = v;
@@ -174,7 +179,7 @@ Tuk.capture = (function () {
         renderPreview();
       } else if (act === "commit") {
         const source = mode === "memo" ? "meeting" : "quick";
-        store.addMany(pending.map(it => Object.assign({ source }, it)));
+        store.addMany(pending.filter(it => it.pick).map(it => Object.assign({ source }, it)));
         pending = [];
         renderPreview();
         const field = root.querySelector("#quickInput, #memoInput");

@@ -25,7 +25,7 @@ Tuk.settings = (function () {
           '<label class="field"><span>AI 서비스</span><select name="provider">' + options + "</select></label>" +
           '<label class="field ai-only"><span>API 키</span><input name="apiKey" type="password" autocomplete="off" value="' + fmt.escape(s.apiKey) + '" placeholder="키를 붙여 넣으세요"></label>' +
           '<label class="field ai-only"><span>모델</span><input name="model" value="' + fmt.escape(s.model) + '" placeholder="' + fmt.escape(p.model) + '"></label>' +
-          '<label class="field ai-only"><span>회의 메모 속 내 이름</span><input name="myName" value="' + fmt.escape(s.myName || "") + '" placeholder="예: 강혁"></label>' +
+          '<label class="field"><span>회의 메모 속 내 이름</span><input name="myName" value="' + fmt.escape(s.myName || "") + '" placeholder="예: 강혁"></label>' +
           '<p class="hint ai-only">키는 이 브라우저에만 저장되고 GitHub나 다른 곳으로 올라가지 않아요.' +
             (p.keyHelp ? ' <a href="' + p.keyHelp + '" target="_blank" rel="noopener">키 발급 페이지 열기</a>' : "") + "</p>" +
           '<p class="test-result" id="testResult" aria-live="polite"></p>' +
