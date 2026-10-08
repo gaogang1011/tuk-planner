@@ -152,7 +152,7 @@ Tuk.widget = (function () {
   async function open() {
     if (pip) { close(); return; }
     if (!supported()) {
-      if (Tuk.drag) Tuk.drag.toast("이 브라우저는 화면에 띄우기를 지원하지 않아요");
+      explain();
       return;
     }
     try {
@@ -179,10 +179,42 @@ Tuk.widget = (function () {
     });
     render();
     syncButtons();
+    firstTip();
   }
 
   function close() {
     if (pip) pip.close();
+  }
+
+  let guide = null;
+
+  function explain() {
+    if (!guide) {
+      guide = document.createElement("dialog");
+      guide.className = "settings";
+      guide.innerHTML =
+        '<div class="settings-form">' +
+          '<h2 class="settings-title">이 브라우저에서는 화면에 띄울 수 없어요</h2>' +
+          '<p class="hint wg-guide">다른 프로그램 위에 떠 있는 위젯은 브라우저의 <b>Document Picture-in-Picture</b> 기능을 써요. 지금은 데스크톱 <b>Chrome·Edge 116 이상</b>, Opera, Firefox 151 이상에서만 돼요. Safari와 휴대폰 브라우저는 아직 지원하지 않아요.</p>' +
+          '<ul class="hint wg-guide-list"><li>Chrome이나 Edge로 이 주소를 열고 <b>화면에 띄우기</b>를 누르세요.</li><li>그동안은 오른쪽 <b>오늘 패널</b>에서 같은 내용을 볼 수 있어요.</li></ul>' +
+          '<div class="settings-actions"><button type="button" class="btn-ghost" data-g="panel">오늘 패널 열기</button><button type="button" class="btn" data-g="close">확인</button></div>' +
+        "</div>";
+      document.body.appendChild(guide);
+      guide.addEventListener("click", e => {
+        const g = e.target.closest("[data-g]");
+        if (e.target === guide || (g && g.dataset.g === "close")) guide.close();
+        if (g && g.dataset.g === "panel") { guide.close(); Tuk.app.togglePanel(true); }
+      });
+    }
+    guide.showModal();
+  }
+
+  function firstTip() {
+    try {
+      if (localStorage.getItem("tuk.widget.tip.v1")) return;
+      localStorage.setItem("tuk.widget.tip.v1", "1");
+    } catch (e) { return; }
+    if (Tuk.drag) Tuk.drag.toast("위젯은 다른 창 위에 떠 있어요. 툭 탭을 닫으면 같이 닫혀요.");
   }
 
   function mount() {
@@ -194,5 +226,5 @@ Tuk.widget = (function () {
     syncButtons();
   }
 
-  return { mount, open, close, render, supported, setMini, isOpen: () => Boolean(pip), isMini: () => mini };
+  return { mount, open, close, render, supported, setMini, explain, isOpen: () => Boolean(pip), isMini: () => mini };
 })();

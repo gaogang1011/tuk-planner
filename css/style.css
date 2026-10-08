@@ -1729,3 +1729,7 @@ body.wg-body { overflow: auto; background: var(--bg); }
 .wg-bar-l { flex: none; font-size: 12px; font-weight: 700; color: var(--now-free); }
 
 .wg { position: relative; }
+
+.wg-guide { font-size: 14px; line-height: 1.65; color: var(--ink); }
+
+.wg-guide-list { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
