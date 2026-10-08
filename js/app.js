@@ -2,6 +2,7 @@
   const { store, views } = Tuk;
   const clock = document.getElementById("clock");
   const upcoming = document.getElementById("upcoming");
+  const capture = document.getElementById("capture");
 
   function tick() {
     const now = new Date();
@@ -14,6 +15,7 @@
     views.renderList(upcoming);
   }
 
+  Tuk.capture.mount(capture);
   views.bindList(upcoming, render);
   store.subscribe(render);
   render();
