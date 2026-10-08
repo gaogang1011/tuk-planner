@@ -189,7 +189,7 @@ Tuk.week = (function () {
         const d = fmt.parse(add.dataset.add + "T00:00");
         const now = new Date();
         d.setHours(fmt.dayKey(d) === fmt.dayKey(now) ? Math.min(23, now.getHours() + 1) : 10, 0, 0, 0);
-        Tuk.detail.openNew(d, 60);
+        Tuk.detail.openNew(d);
         return;
       }
       const col = e.target.closest(".wk-col");
@@ -198,7 +198,7 @@ Tuk.week = (function () {
       const mins = Math.floor((e.clientY - rect.top) / HOUR_PX * 2) * 30;
       const start = fmt.parse(col.dataset.day + "T00:00");
       start.setMinutes(+col.dataset.start * 60 + mins);
-      Tuk.detail.openNew(start, 60);
+      Tuk.detail.openNew(start);
     });
   }
 

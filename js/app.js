@@ -58,6 +58,9 @@
   }
 
   function renderPanel() {
+    const active = document.activeElement;
+    if (Tuk.detail.peek.mode === "item" && active && panel.contains(active) && active.matches("input[type=datetime-local], textarea")) return;
+    if (Tuk.detail.render(panel)) return;
     panel.innerHTML =
       '<div class="rp-head"><p class="rp-date" id="rpClock"></p></div>' +
       '<section class="now" id="nowCard" aria-label="지금과 다음"></section>' +
@@ -93,6 +96,10 @@
   });
 
   document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && Tuk.detail.peek.mode && !document.querySelector("dialog[open]")) {
+      Tuk.detail.close();
+      return;
+    }
     const t = e.target;
     if ((t && t.closest && t.closest("input, textarea, select, dialog, [contenteditable]")) || e.metaKey || e.ctrlKey || e.altKey) return;
     if (document.querySelector("dialog[open]")) return;
@@ -108,18 +115,18 @@
   panel.addEventListener("click", e => {
     if (e.target.dataset.brief === "ai") Tuk.now.requestAiBrief(e.target);
   });
-  Tuk.detail.mount();
+  Tuk.detail.mount(panel);
+  Tuk.month.bindPanel(panel);
   Tuk.drag.bind(calBody, ".wk-ev, .wk-chip, .mo-chip", "auto");
   Tuk.week.bind(calBody);
   Tuk.month.bind(calBody);
-  Tuk.month.bindPanel(calBody);
   views.bindList(calBody, render);
   cal.bindNav(head);
   cal.subscribe(render);
   store.subscribe(render);
   [narrow, phone, Tuk.week.mobile].forEach(m => m.addEventListener && m.addEventListener("change", () => { closeDrawers(); render(); }));
   render();
-  setInterval(() => { tick(); if (cal.state.view !== "month") renderCal(); renderPanel(); }, 30000);
+  setInterval(() => { tick(); if (cal.state.view !== "month") renderCal(); if (!Tuk.detail.peek.mode) renderPanel(); }, 30000);
 
   Tuk.app = { render, toggleSidebar, togglePanel, closeDrawers, ui };
 })();

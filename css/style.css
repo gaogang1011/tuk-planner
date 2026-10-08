@@ -1426,3 +1426,65 @@ button.ag-row:hover { background: var(--hover); }
 .rp .brief-text { font-size: 13px; line-height: 1.65; color: var(--ink); }
 
 .rp-body { display: grid; gap: 22px; }
+
+.pk-head { display: flex; align-items: center; gap: 6px; min-height: 28px; }
+
+.pk-crumb { font-size: 13px; color: var(--muted); }
+
+.pk { display: grid; gap: 14px; }
+
+.pk-title {
+  width: 100%;
+  border: 0;
+  background: none;
+  resize: none;
+  overflow: hidden;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  padding: 2px 0;
+  outline: none;
+}
+
+.pk-title::placeholder { color: var(--faint); }
+
+.pk-done { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+
+.props { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 2px 8px; margin: 0; align-items: center; }
+
+.props dt { font-size: 13px; color: var(--muted); padding: 6px 0; }
+
+.props dd { margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 32px; }
+
+.props dd.muted { color: var(--muted); font-size: 13px; }
+
+.props input[type="datetime-local"] {
+  border: 1px solid transparent;
+  background: none;
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  font-size: 13px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.props input[type="datetime-local"]:hover, .props input[type="datetime-local"]:focus { background: var(--hover); border-color: var(--line); }
+
+.props input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); margin: 0 6px; }
+
+.prop-hint { font-size: 11px; color: var(--faint); }
+
+.pk-seg { display: inline-flex; }
+
+.pk-saved { margin: 0; font-size: 12px; color: var(--faint); }
+
+.pk-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.pk-actions .btn { margin-left: auto; }
+
+.pk-day { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+
+.btn { border: 0; border-radius: var(--radius-sm); background: var(--accent); color: #fff; font-weight: 600; padding: 6px 14px; }
+
+.btn:hover { filter: brightness(1.05); }
