@@ -94,7 +94,7 @@ Tuk.store = (function () {
 
   function getSettings() {
     const raw = safeGet(SETTINGS_KEY);
-    const base = { provider: "none", apiKey: "", model: "" };
+    const base = { provider: "none", apiKey: "", model: "", myName: "" };
     if (!raw) return base;
     try { return Object.assign(base, JSON.parse(raw)); } catch (e) { return base; }
   }

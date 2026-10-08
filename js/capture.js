@@ -2,11 +2,11 @@ window.Tuk = window.Tuk || {};
 
 Tuk.capture = (function () {
   const { fmt, store, parser } = Tuk;
+  let mode = "line";
   let pending = [];
   let pendingSource = "";
-  let root;
-
   let lastError = "";
+  let root;
 
   async function analyzeLine(text) {
     lastError = "";
@@ -24,6 +24,23 @@ Tuk.capture = (function () {
     return { items: parser.parse(text), source: "rule" };
   }
 
+  async function analyzeMemo(text) {
+    lastError = "";
+    const cfg = Tuk.settings.effective();
+    if (!cfg.enabled) {
+      lastError = "회의 메모 정리는 AI 연결이 필요해요. 설정에서 AI를 연결해 주세요.";
+      return { items: [], source: "none" };
+    }
+    try {
+      const items = await Tuk.ai.extractMemo(cfg, text, new Date());
+      if (!items.length) lastError = "메모에서 할 일이나 일정을 찾지 못했어요.";
+      return { items, source: "ai" };
+    } catch (err) {
+      lastError = err.message;
+      return { items: [], source: "none" };
+    }
+  }
+
   function sourceLabel(src) {
     if (src === "ai") return "AI가 정리했어요";
     if (src === "rule-fallback") return (lastError ? lastError + " " : "") + "기본 규칙으로 대신 정리했어요";
@@ -32,19 +49,42 @@ Tuk.capture = (function () {
 
   function render() {
     root.innerHTML =
+      '<div class="modes" role="tablist" aria-label="입력 방식">' +
+        '<button type="button" role="tab" class="mode" data-mode="line" aria-selected="' + (mode === "line") + '">한 줄</button>' +
+        '<button type="button" role="tab" class="mode" data-mode="memo" aria-selected="' + (mode === "memo") + '">회의 메모</button>' +
+      "</div>" +
+      (mode === "line" ? lineForm() : memoForm()) +
+      '<p class="capture-error" id="captureError" aria-live="polite"></p>' +
+      '<div class="preview" id="preview" aria-live="polite"></div>';
+    renderPreview();
+  }
+
+  function lineForm() {
+    return (
       '<form class="quick" id="quickForm">' +
         '<label class="quick-label" for="quickInput">툭 던져 두세요</label>' +
         '<div class="quick-row">' +
           '<input id="quickInput" class="quick-input" autocomplete="off" placeholder="다음 주 화요일 3시 교수님 면담, 그 전에 자료 정리">' +
           '<button type="submit" class="btn quick-go">정리하기</button>' +
         "</div>" +
-      "</form>" +
-      '<div class="preview" id="preview" aria-live="polite"></div>';
-    renderPreview();
+      "</form>"
+    );
+  }
+
+  function memoForm() {
+    return (
+      '<form class="quick" id="memoForm">' +
+        '<label class="quick-label" for="memoInput">회의 메모를 그대로 붙여 넣으세요</label>' +
+        '<textarea id="memoInput" class="memo-input" rows="6" placeholder="- 다음 회의는 수요일 2시&#10;- 강혁: 화면 시안 금요일까지 공유&#10;- 준혁: API 문서 정리&#10;- 발표 자료는 다 같이 월요일 오전까지"></textarea>' +
+        '<div class="memo-actions"><button type="submit" class="btn quick-go">할 일 뽑기</button></div>' +
+      "</form>"
+    );
   }
 
   function renderPreview() {
     const box = root.querySelector("#preview");
+    const err = root.querySelector("#captureError");
+    err.textContent = !pending.length ? lastError : "";
     if (!pending.length) {
       box.innerHTML = "";
       return;
@@ -70,32 +110,33 @@ Tuk.capture = (function () {
     );
   }
 
-  async function submit(text) {
-    const input = root.querySelector("#quickInput");
+  async function submit(text, analyze, fallbackOne) {
     const go = root.querySelector(".quick-go");
+    const label = go.textContent;
     if (!text.trim()) return;
     go.disabled = true;
     go.textContent = "정리 중…";
     try {
-      const r = await analyzeLine(text);
+      const r = await analyze(text);
       pending = r.items;
       pendingSource = r.source;
-      if (!pending.length) {
-        pending = [{ type: "task", title: text.trim() }];
+      if (!pending.length && fallbackOne) pending = [{ type: "task", title: text.trim() }];
+      if (pending.length) {
+        const field = root.querySelector("#quickInput, #memoInput");
+        if (field) field.value = "";
       }
-      input.value = "";
     } finally {
       go.disabled = false;
-      go.textContent = "정리하기";
+      go.textContent = label;
       renderPreview();
     }
   }
 
   function bind() {
     root.addEventListener("submit", e => {
-      if (e.target.id !== "quickForm") return;
       e.preventDefault();
-      submit(root.querySelector("#quickInput").value);
+      if (e.target.id === "quickForm") submit(root.querySelector("#quickInput").value, analyzeLine, true);
+      if (e.target.id === "memoForm") submit(root.querySelector("#memoInput").value, analyzeMemo, false);
     });
     root.addEventListener("input", e => {
       const row = e.target.closest(".preview-row");
@@ -108,6 +149,15 @@ Tuk.capture = (function () {
       }
     });
     root.addEventListener("click", e => {
+      if (e.target.dataset.mode && e.target.dataset.mode !== mode) {
+        mode = e.target.dataset.mode;
+        pending = [];
+        lastError = "";
+        render();
+        const field = root.querySelector("#quickInput, #memoInput");
+        if (field) field.focus();
+        return;
+      }
       const act = e.target.dataset.act;
       if (!act) return;
       const row = e.target.closest(".preview-row");
@@ -123,10 +173,12 @@ Tuk.capture = (function () {
         pending = [];
         renderPreview();
       } else if (act === "commit") {
-        store.addMany(pending.map(it => Object.assign({ source: "quick" }, it)));
+        const source = mode === "memo" ? "meeting" : "quick";
+        store.addMany(pending.map(it => Object.assign({ source }, it)));
         pending = [];
         renderPreview();
-        root.querySelector("#quickInput").focus();
+        const field = root.querySelector("#quickInput, #memoInput");
+        if (field) field.focus();
       }
     });
   }

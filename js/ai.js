@@ -98,7 +98,8 @@ Tuk.ai = (function () {
         } else {
           out.due = dt(x.due);
         }
-        if (typeof x.note === "string" && x.note.trim()) out.note = x.note.trim().slice(0, 200);
+        if (typeof x.owner === "string" && x.owner.trim()) out.owner = x.owner.trim().slice(0, 30);
+        if (typeof x.mine === "boolean") out.mine = x.mine;
         return out;
       });
   }
@@ -127,11 +128,29 @@ Tuk.ai = (function () {
     return clean(extractJson(out));
   }
 
+  async function extractMemo(settings, text, now) {
+    const me = (settings.myName || "").trim();
+    const system = [
+      "너는 회의록에서 실행할 일을 뽑는 도우미다. 사용자가 붙여 넣은 회의 메모에서 할 일(task)과 앞으로 잡힌 일정(event)만 뽑는다.",
+      "현재 시각: " + nowText(now || new Date()),
+      ITEM_RULES,
+      "추가 규칙:",
+      "- 이미 지난 논의, 결정 사항, 단순 정보는 뽑지 않는다.",
+      "- 담당자가 적혀 있으면 owner에 그 이름을, 없으면 owner를 null로.",
+      "- mine은 사용자 본인이 해야 하는 항목이면 true. " + (me ? "사용자의 이름은 \"" + me + "\"이다. 담당자가 다른 사람이면 false, 담당자가 없거나 \"다 같이\", \"전원\"이면 true." : "사용자 이름을 모르므로 담당자가 없거나 다 같이 하는 일만 true, 특정 사람이 맡은 일은 false."),
+      "- 다음 회의 같은 일정은 mine을 true로.",
+      "- title에는 담당자 이름을 넣지 않는다.",
+      "출력은 {\"items\": [...]} JSON 하나만. 설명이나 코드 블록 없이."
+    ].join("\n");
+    const out = await complete(settings, system, text);
+    return clean(extractJson(out));
+  }
+
   async function ping(settings) {
     const out = await complete(settings, "JSON으로만 답한다.", "{\"ok\": true}를 그대로 출력해.");
     extractJson(out);
     return true;
   }
 
-  return { complete, parseLine, ping, clean, extractJson, nowText, ITEM_RULES };
+  return { complete, parseLine, extractMemo, ping, clean, extractJson, nowText, ITEM_RULES };
 })();

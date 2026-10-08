@@ -367,3 +367,34 @@ button { cursor: pointer; }
 .settings-actions [data-act="test"] { margin-right: auto; }
 
 [hidden] { display: none !important; }
+
+.modes { display: flex; gap: 4px; margin-bottom: 12px; }
+
+.mode {
+  border: 0;
+  background: none;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.mode[aria-selected="true"] { background: var(--ink); color: var(--surface); }
+
+.memo-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: 15px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.memo-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+
+.capture-error { margin: 0; font-size: 14px; color: var(--due); }
+
+.capture-error:not(:empty) { margin-top: 10px; }
