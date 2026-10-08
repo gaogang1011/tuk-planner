@@ -24,7 +24,7 @@
     const rpOpen = narrow.matches ? Boolean(ui.rpDrawer) : ui.panel;
     app.classList.toggle("sb-closed", !sbOpen);
     app.classList.toggle("rp-closed", !rpOpen);
-    app.classList.toggle("drawer-open", (phone.matches && ui.sbDrawer) || (narrow.matches && ui.rpDrawer));
+    app.classList.toggle("drawer-open", Boolean((phone.matches && ui.sbDrawer) || (narrow.matches && ui.rpDrawer)));
   }
 
   function toggleSidebar() {

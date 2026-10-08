@@ -1547,3 +1547,72 @@ button.ag-row:hover { background: var(--hover); }
 .sc-list dd { margin: 0; display: flex; gap: 4px; justify-content: flex-end; }
 
 .sc-list kbd { font-size: 12px; color: var(--ink); padding: 1px 7px; min-width: 22px; text-align: center; }
+
+@media (max-width: 1100px) {
+  .app, .app.rp-closed { grid-template-columns: var(--sbw) minmax(0, 1fr); }
+
+  .rp {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(360px, 92vw);
+    z-index: 30;
+    box-shadow: var(--shadow-pop);
+    transition: transform 0.2s ease;
+  }
+
+  .app.rp-closed .rp { transform: translateX(105%); visibility: hidden; }
+
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 15, 15, 0.3);
+    z-index: 25;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .app.drawer-open .scrim { opacity: 1; pointer-events: auto; }
+}
+
+@media (max-width: 760px) {
+  .app, .app.rp-closed, .app.sb-closed { grid-template-columns: minmax(0, 1fr); }
+
+  .sb {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(300px, 86vw);
+    z-index: 30;
+    box-shadow: var(--shadow-pop);
+    transition: transform 0.2s ease;
+  }
+
+  .app.sb-closed .sb { transform: translateX(-105%); }
+
+  .sb-head .ic { opacity: 1; }
+
+  .mh { padding: 8px 12px 6px; gap: 6px; flex-wrap: wrap; }
+
+  .cal-title { order: 0; }
+
+  .cal-title h2 { font-size: 17px; }
+
+  .cal-sub { display: none; }
+
+  .seg-btn { padding: 3px 9px; }
+
+  .capture { margin: 0 12px; }
+
+  .cal-body { padding: 8px 12px 12px; }
+
+  .quick-input { font-size: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rp, .sb, .scrim { transition: none; }
+}
