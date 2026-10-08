@@ -584,3 +584,18 @@ button { cursor: pointer; }
 .brief-ai:disabled { color: var(--muted); }
 
 .gap-title { margin-top: 0; }
+
+@media (max-width: 600px) {
+  .topbar { padding-top: 14px; }
+  .now { padding: 20px 18px 16px; }
+  .capture { padding: 18px 16px 16px; }
+  .panel { padding: 18px 16px; }
+  .rb-free span, .rb-event span { display: none; }
+  .rb-track { height: 32px; }
+  .rb-event, .rb-free { top: 5px; bottom: 5px; }
+  .clock { font-size: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; transition: none !important; }
+}
