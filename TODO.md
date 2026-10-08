@@ -34,4 +34,5 @@
 ## 7. 마무리
 - [x] 디자인 다듬기와 모바일 대응
 - [x] 파서 테스트 (예시 문장 10개)
-- [ ] GitHub Pages 배포와 README 정리
+- [x] README 정리
+- [ ] GitHub Pages 배포
