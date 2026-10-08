@@ -28,7 +28,7 @@
       Tuk.now.renderToday(todayEl);
       views.renderList(upcoming);
     } else if (v === "week") {
-      cal.renderWeek(viewWeek);
+      Tuk.week.render(viewWeek);
     } else {
       cal.renderMonth(viewMonth);
     }
@@ -54,6 +54,8 @@
   todayEl.addEventListener("click", e => {
     if (e.target.dataset.brief === "ai") Tuk.now.requestAiBrief(e.target);
   });
+  Tuk.detail.mount();
+  Tuk.week.bind(viewWeek);
   cal.bindNav(viewWeek);
   cal.bindNav(viewMonth);
   cal.subscribe(render);
