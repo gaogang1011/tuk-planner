@@ -8,7 +8,7 @@
 
 ## 1. 기본 구조
 - [x] 프로젝트 기본 구조 만들기 (index.html, style.css, js 폴더, README)
-- [ ] 데이터 모델과 localStorage 저장소 만들기
+- [x] 데이터 모델과 localStorage 저장소 만들기
 
 ## 2. 목록 관리 (F4)
 - [ ] 일정·할 일 목록 화면 (추가, 완료 체크, 삭제)
