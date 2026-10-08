@@ -21,7 +21,6 @@ Tuk.month = (function () {
     const ge = cal.addDays(gs, 42);
     const occ = cal.occurrences(gs, ge);
     const hl = cal.state.highlight || [];
-    const sel = cal.state.selected;
 
     let grid = '<div class="mo-week mo-dows">' + WEEK.map((w, i) => '<div class="mo-dow' + (i === 5 ? " is-sat" : "") + (i === 6 ? " is-sun" : "") + '">' + w + "</div>").join("") + "</div>";
     for (let r = 0; r < 6; r++) {
@@ -36,7 +35,7 @@ Tuk.month = (function () {
         const cls = "mo-day" +
           (d.getMonth() !== c.getMonth() ? " is-out" : "") +
           (key === fmt.dayKey(now) ? " is-today" : "") +
-          (key === sel ? " is-selected" : "") +
+          (key === fmt.dayKey(panelDay()) ? " is-selected" : "") +
           (i === 5 ? " is-sat" : "") + (i === 6 || holiday ? " is-sun" : "");
         const shown = list.slice(0, list.length > MAX ? MAX - 1 : MAX);
         const more = list.length - shown.length;
@@ -59,7 +58,7 @@ Tuk.month = (function () {
         '<div class="mo">' + grid + "</div>" +
         '<aside class="mo-panel" id="moPanel"></aside>' +
       "</div>";
-    if (Tuk.month.renderPanel) Tuk.month.renderPanel(el.querySelector("#moPanel"));
+    renderPanel(el.querySelector("#moPanel"));
   }
 
   function bind(el) {
@@ -78,5 +77,79 @@ Tuk.month = (function () {
     });
   }
 
-  return { render, bind, renderPanel: null };
+  function panelDay() {
+    const c = cal.state.cursor;
+    const sel = cal.state.selected && fmt.parse(cal.state.selected + "T00:00");
+    if (sel && sel.getMonth() === c.getMonth() && sel.getFullYear() === c.getFullYear()) return sel;
+    const now = new Date();
+    if (now.getMonth() === c.getMonth() && now.getFullYear() === c.getFullYear()) return fmt.startOfDay(now);
+    return new Date(c.getFullYear(), c.getMonth(), 1);
+  }
+
+  function renderPanel(panel) {
+    const d = panelDay();
+    const key = fmt.dayKey(d);
+    const occ = cal.occurrences(d, cal.addDays(d, 1));
+    const events = occ.filter(o => o.kind === "event");
+    const tasks = occ.filter(o => o.kind === "task");
+    const holiday = holidays.get(key);
+    const busyMin = events.filter(o => !o.allDay).reduce((s, o) => s + (o.end - o.start) / 60000, 0);
+    panel.innerHTML =
+      '<div class="mp-head">' +
+        '<h3 class="mp-date">' + fmt.escape(fmt.dayLabel(d)) + "</h3>" +
+        '<p class="mp-meta">' + (holiday ? '<span class="wk-holiday">' + holiday + "</span> · " : "") +
+          (events.length ? "일정 " + events.length + (busyMin ? " · " + fmt.duration(busyMin * 60000) : "") : "일정 없음") +
+          (tasks.length ? " · 마감 " + tasks.length : "") + "</p>" +
+      "</div>" +
+      '<form class="mp-add" id="dayAdd" data-day="' + key + '">' +
+        '<input id="dayAddInput" autocomplete="off" placeholder="이날에 추가: 3시 팀 회의" aria-label="이날에 추가">' +
+        '<button type="submit" class="btn">추가</button>' +
+      "</form>" +
+      '<p class="mp-msg" id="dayAddMsg" aria-live="polite"></p>' +
+      (events.length ? '<ul class="mp-events">' + events.map(o =>
+        '<li><button type="button" class="mp-ev" data-id="' + o.item.id + '">' +
+          '<span class="mp-time">' + (o.allDay ? "종일" : fmt.time(o.start) + "–" + fmt.time(o.end)) + "</span>" +
+          '<span class="mp-title">' + fmt.escape(o.item.title) + "</span>" +
+          (o.item.repeat ? '<span class="repeat-badge">' + Tuk.detail.repeatLabel(o.item.repeat) + "</span>" : "") +
+        "</button></li>").join("") + "</ul>" : "") +
+      (tasks.length ? '<h4 class="day-label mp-sub">이날 마감</h4><ul class="items">' + tasks.map(o => Tuk.views.itemRow(o.item, false)).join("") + "</ul>" : "") +
+      (!events.length && !tasks.length ? '<p class="empty">비어 있는 날이에요. 위 칸에 적어서 바로 추가하세요.</p>' : "");
+  }
+
+  function hasDate(text) {
+    return /(오늘|내일|모레|글피|요일|욜|주말|다음\s*주|담주|\d{1,2}\s*월\s*\d{1,2}\s*일|\d{1,2}\s*\/\s*\d{1,2}|\d{1,2}\s*일\s*(뒤|후)|매주|매일|평일)/.test(text);
+  }
+
+  async function addToDay(form) {
+    const input = form.querySelector("input");
+    const text = input.value.trim();
+    if (!text) return;
+    const d = fmt.parse(form.dataset.day + "T00:00");
+    const full = hasDate(text) ? text : (d.getMonth() + 1) + "월 " + d.getDate() + "일 " + text;
+    const r = await Tuk.capture.analyzeLine(full);
+    const items = r.items.length ? r.items : [{ type: "task", title: text, due: form.dataset.day + "T23:59" }];
+    const added = Tuk.store.addMany(items.map(it => Object.assign({ source: "calendar" }, it)));
+    const first = added.find(it => fmt.parse(it.start || it.due));
+    if (first && fmt.dayKey(fmt.parse(first.start || first.due)) !== form.dataset.day) {
+      cal.goTo(fmt.parse(first.start || first.due), added.map(a => a.id));
+    } else {
+      cal.flash(added.map(a => a.id));
+    }
+    const m = document.getElementById("dayAddMsg");
+    if (m) m.textContent = added.length + "개 추가했어요.";
+  }
+
+  function bindPanel(el) {
+    el.addEventListener("submit", e => {
+      if (e.target.id !== "dayAdd") return;
+      e.preventDefault();
+      addToDay(e.target);
+    });
+    el.addEventListener("click", e => {
+      const ev = e.target.closest(".mp-ev");
+      if (ev) Tuk.detail.open(ev.dataset.id);
+    });
+  }
+
+  return { render, bind, bindPanel, renderPanel };
 })();

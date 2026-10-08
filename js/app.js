@@ -57,6 +57,8 @@
   Tuk.detail.mount();
   Tuk.week.bind(viewWeek);
   Tuk.month.bind(viewMonth);
+  Tuk.month.bindPanel(viewMonth);
+  views.bindList(viewMonth, render);
   cal.bindNav(viewWeek);
   cal.bindNav(viewMonth);
   cal.subscribe(render);

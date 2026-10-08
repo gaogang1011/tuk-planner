@@ -194,5 +194,5 @@ Tuk.capture = (function () {
     bind();
   }
 
-  return { mount };
+  return { mount, analyzeLine };
 })();
