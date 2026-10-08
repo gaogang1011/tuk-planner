@@ -35,4 +35,4 @@
 - [x] 디자인 다듬기와 모바일 대응
 - [x] 파서 테스트 (예시 문장 10개)
 - [x] README 정리
-- [ ] GitHub Pages 배포
+- [x] GitHub Pages 배포
