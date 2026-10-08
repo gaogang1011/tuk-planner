@@ -63,10 +63,11 @@ Tuk.views = (function () {
     items.forEach(it => {
       const d = itemDate(it);
       if (!d) { undated.push(it); return; }
-      if (d < today) {
-        if (it.type === "task" && !it.done) overdue.push(it);
+      if (it.type === "task" && !it.done && d < new Date()) {
+        overdue.push(it);
         return;
       }
+      if (d < today) return;
       const key = fmt.dayKey(d);
       if (!groups.has(key)) groups.set(key, { date: d, items: [] });
       groups.get(key).items.push(it);
