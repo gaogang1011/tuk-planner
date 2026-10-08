@@ -1539,3 +1539,11 @@ button.ag-row:hover { background: var(--hover); }
 .pl-foot { margin: 0; padding: 8px 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--faint); display: flex; gap: 6px; align-items: center; }
 
 .pl-foot kbd + kbd { margin-left: -2px; }
+
+.sc-list { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; margin: 0; align-items: center; }
+
+.sc-list dt { font-size: 14px; }
+
+.sc-list dd { margin: 0; display: flex; gap: 4px; justify-content: flex-end; }
+
+.sc-list kbd { font-size: 12px; color: var(--ink); padding: 1px 7px; min-width: 22px; text-align: center; }

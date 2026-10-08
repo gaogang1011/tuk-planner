@@ -90,6 +90,7 @@
       if (a === "toggle-sidebar") toggleSidebar();
       if (a === "toggle-panel") togglePanel();
       if (a === "close-drawers") closeDrawers();
+      if (a === "shortcuts") Tuk.shortcuts.open();
     }
     const v = e.target.closest("[data-view]");
     if (v && head.contains(v)) cal.setView(v.dataset.view);
@@ -103,9 +104,22 @@
     const t = e.target;
     if ((t && t.closest && t.closest("input, textarea, select, dialog, [contenteditable]")) || e.metaKey || e.ctrlKey || e.altKey) return;
     if (document.querySelector("dialog[open]")) return;
-    if (e.key === "ArrowLeft") cal.shift(-1);
-    if (e.key === "ArrowRight") cal.shift(1);
-    if (e.key === "t" || e.key === "T") cal.goToday();
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    const map = {
+      ArrowLeft: () => cal.shift(-1),
+      ArrowRight: () => cal.shift(1),
+      t: () => cal.goToday(),
+      d: () => cal.setView("day"),
+      w: () => cal.setView("week"),
+      m: () => cal.setView("month"),
+      n: () => { const f = document.querySelector("#quickInput, #memoInput"); if (f) f.focus(); },
+      "[": toggleSidebar,
+      "]": () => togglePanel(),
+      "?": () => Tuk.shortcuts.open(),
+      p: () => Tuk.widget && Tuk.widget.open()
+    };
+    const fn = map[k] || map[e.key];
+    if (fn) { e.preventDefault(); fn(); }
   });
 
   Tuk.sidebar.mount(miniCal, sbTasks);
