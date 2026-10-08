@@ -44,6 +44,7 @@ Tuk.week = (function () {
     return ((d.getHours() - startH) * 60 + d.getMinutes()) / 60 * HOUR_PX;
   }
 
+  let lastKey = "";
   const mobile = window.matchMedia ? window.matchMedia("(max-width: 700px)") : { matches: false };
 
   function freeOf(d, timed, now) {
@@ -92,7 +93,7 @@ Tuk.week = (function () {
           (rows || free ? '<ul class="wm-list">' + rows + free + "</ul>" : "") +
         "</section>";
     }
-    el.innerHTML = cal.headerHtml() + '<nav class="ws-strip" aria-label="요일">' + strip + "</nav>" + '<div class="wm">' + cards + "</div>";
+    el.innerHTML = '<nav class="ws-strip" aria-label="요일">' + strip + "</nav>" + '<div class="wm">' + cards + "</div>";
   }
 
   function render(el) {
@@ -153,8 +154,10 @@ Tuk.week = (function () {
     let gutter = "";
     for (let h = startH; h < endH; h++) gutter += '<div class="wk-hour" style="top:' + ((h - startH) * HOUR_PX) + 'px">' + h + "</div>";
 
+    const prev = el.querySelector("#wkScroll");
+    const prevTop = prev ? prev.scrollTop : null;
+    const viewKey = fmt.dayKey(ws) + ":" + days.length;
     el.innerHTML =
-      cal.headerHtml() +
       '<div class="wk">' +
         '<div class="wk-head">' + head + "</div>" +
         '<div class="wk-allday">' + allday + "</div>" +
@@ -168,6 +171,9 @@ Tuk.week = (function () {
       '<p class="wk-legend">점선은 09–21시 사이 1시간 이상 비는 시간이에요. 빈 칸을 누르면 그 시간에 일정을 추가해요.</p>';
 
     const scroller = el.querySelector("#wkScroll");
+    const keepScroll = prevTop !== null && lastKey === viewKey && !hl.length;
+    lastKey = viewKey;
+    if (keepScroll) { scroller.scrollTop = prevTop; return; }
     const focusH = cal.state.highlight && cal.state.highlight.length
       ? Math.min.apply(null, occ.filter(o => hl.includes(o.item.id) && !o.allDay).map(o => o.start.getHours()).concat([24]))
       : (fmt.dayKey(cal.weekStart(now)) === fmt.dayKey(ws) ? now.getHours() - 1 : 9);

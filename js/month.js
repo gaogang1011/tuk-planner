@@ -53,7 +53,6 @@ Tuk.month = (function () {
     }
 
     el.innerHTML =
-      cal.headerHtml() +
       '<div class="mo-wrap">' +
         '<div class="mo">' + grid + "</div>" +
         '<aside class="mo-panel" id="moPanel"></aside>' +

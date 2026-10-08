@@ -1,49 +1,98 @@
 (function () {
-  const { store, views } = Tuk;
-  const clock = document.getElementById("clock");
-  const upcoming = document.getElementById("upcoming");
-  const capture = document.getElementById("capture");
-  const nowEl = document.getElementById("now");
-  const todayEl = document.getElementById("today");
-  const viewToday = document.getElementById("viewToday");
-  const viewWeek = document.getElementById("viewWeek");
-  const viewMonth = document.getElementById("viewMonth");
+  const { store, views, fmt } = Tuk;
   const cal = Tuk.cal;
+  const app = document.getElementById("app");
+  const head = document.getElementById("mainHead");
+  const calBody = document.getElementById("calBody");
+  const panel = document.getElementById("panel");
+  const capture = document.getElementById("capture");
+  const UI_KEY = "tuk.ui.v1";
+  const narrow = window.matchMedia("(max-width: 1100px)");
+  const phone = window.matchMedia("(max-width: 760px)");
 
-  function tick() {
-    const now = new Date();
-    clock.textContent = now.toLocaleString("ko-KR", {
-      month: "long", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit"
-    });
+  const ui = { sidebar: true, panel: true };
+  try { Object.assign(ui, JSON.parse(localStorage.getItem(UI_KEY) || "{}")); } catch (e) {}
+
+  function saveUi() {
+    try { localStorage.setItem(UI_KEY, JSON.stringify({ sidebar: ui.sidebar, panel: ui.panel })); } catch (e) {}
+  }
+
+  function applyLayout() {
+    const sbOpen = phone.matches ? Boolean(ui.sbDrawer) : ui.sidebar;
+    const rpOpen = narrow.matches ? Boolean(ui.rpDrawer) : ui.panel;
+    app.classList.toggle("sb-closed", !sbOpen);
+    app.classList.toggle("rp-closed", !rpOpen);
+    app.classList.toggle("drawer-open", (phone.matches && ui.sbDrawer) || (narrow.matches && ui.rpDrawer));
+  }
+
+  function toggleSidebar() {
+    if (phone.matches) ui.sbDrawer = !ui.sbDrawer;
+    else { ui.sidebar = !ui.sidebar; saveUi(); }
+    applyLayout();
+  }
+
+  function togglePanel(force) {
+    if (narrow.matches) ui.rpDrawer = force === undefined ? !ui.rpDrawer : force;
+    else { ui.panel = force === undefined ? !ui.panel : force; saveUi(); }
+    applyLayout();
+  }
+
+  function closeDrawers() {
+    ui.sbDrawer = false;
+    ui.rpDrawer = false;
+    applyLayout();
+  }
+
+  function renderHead() {
+    head.innerHTML = cal.headerHtml();
+  }
+
+  function renderCal() {
+    const v = cal.state.view;
+    calBody.dataset.view = v;
+    if (v === "month") Tuk.month.render(calBody);
+    else if (v === "day" && Tuk.week.renderDay) Tuk.week.renderDay(calBody);
+    else Tuk.week.render(calBody);
+  }
+
+  function renderPanel() {
+    panel.innerHTML =
+      '<div class="rp-head"><p class="rp-date" id="rpClock"></p></div>' +
+      '<section class="now" id="nowCard" aria-label="지금과 다음"></section>' +
+      '<section class="rp-body" id="todayBody"></section>';
+    Tuk.now.render(panel.querySelector("#nowCard"));
+    Tuk.now.renderToday(panel.querySelector("#todayBody"));
+    tick();
   }
 
   function render() {
-    const v = cal.state.view;
-    viewToday.hidden = v !== "today";
-    viewWeek.hidden = v !== "week";
-    viewMonth.hidden = v !== "month";
-    document.querySelectorAll(".viewtab").forEach(b => b.setAttribute("aria-current", b.dataset.view === v ? "page" : "false"));
-    if (v === "today") {
-      Tuk.now.render(nowEl);
-      Tuk.now.renderToday(todayEl);
-      views.renderList(upcoming);
-    } else if (v === "week") {
-      Tuk.week.render(viewWeek);
-    } else {
-      Tuk.month.render(viewMonth);
-    }
+    renderHead();
+    renderCal();
+    renderPanel();
+    applyLayout();
   }
 
-  document.querySelector(".viewnav").addEventListener("click", e => {
-    const b = e.target.closest("[data-view]");
-    if (b) cal.setView(b.dataset.view);
+  function tick() {
+    const el = document.getElementById("rpClock");
+    if (el) el.textContent = new Date().toLocaleString("ko-KR", { month: "long", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit" });
+  }
+
+  app.addEventListener("click", e => {
+    const act = e.target.closest("[data-act]");
+    if (act) {
+      const a = act.dataset.act;
+      if (a === "toggle-sidebar") toggleSidebar();
+      if (a === "toggle-panel") togglePanel();
+      if (a === "close-drawers") closeDrawers();
+    }
+    const v = e.target.closest("[data-view]");
+    if (v && head.contains(v)) cal.setView(v.dataset.view);
   });
 
   document.addEventListener("keydown", e => {
     const t = e.target;
     if ((t && t.closest && t.closest("input, textarea, select, dialog, [contenteditable]")) || e.metaKey || e.ctrlKey || e.altKey) return;
     if (document.querySelector("dialog[open]")) return;
-    if (cal.state.view === "today") return;
     if (e.key === "ArrowLeft") cal.shift(-1);
     if (e.key === "ArrowRight") cal.shift(1);
     if (e.key === "t" || e.key === "T") cal.goToday();
@@ -51,24 +100,22 @@
 
   Tuk.settings.mount(document.getElementById("openSettings"));
   Tuk.capture.mount(capture);
-  views.bindList(upcoming, render);
-  views.bindList(todayEl, render);
-  todayEl.addEventListener("click", e => {
+  views.bindList(panel, render);
+  panel.addEventListener("click", e => {
     if (e.target.dataset.brief === "ai") Tuk.now.requestAiBrief(e.target);
   });
   Tuk.detail.mount();
-  Tuk.drag.bind(viewWeek, ".wk-ev, .wk-chip", "week");
-  Tuk.drag.bind(viewMonth, ".mo-chip", "month");
-  Tuk.week.bind(viewWeek);
-  Tuk.month.bind(viewMonth);
-  Tuk.month.bindPanel(viewMonth);
-  views.bindList(viewMonth, render);
-  cal.bindNav(viewWeek);
-  cal.bindNav(viewMonth);
+  Tuk.drag.bind(calBody, ".wk-ev, .wk-chip, .mo-chip", "auto");
+  Tuk.week.bind(calBody);
+  Tuk.month.bind(calBody);
+  Tuk.month.bindPanel(calBody);
+  views.bindList(calBody, render);
+  cal.bindNav(head);
   cal.subscribe(render);
-  if (Tuk.week.mobile.addEventListener) Tuk.week.mobile.addEventListener("change", render);
   store.subscribe(render);
+  [narrow, phone, Tuk.week.mobile].forEach(m => m.addEventListener && m.addEventListener("change", () => { closeDrawers(); render(); }));
   render();
-  tick();
-  setInterval(() => { tick(); if (cal.state.view !== "month") render(); }, 30000);
+  setInterval(() => { tick(); if (cal.state.view !== "month") renderCal(); renderPanel(); }, 30000);
+
+  Tuk.app = { render, toggleSidebar, togglePanel, closeDrawers, ui };
 })();

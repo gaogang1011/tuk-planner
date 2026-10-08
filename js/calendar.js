@@ -3,12 +3,12 @@ window.Tuk = window.Tuk || {};
 Tuk.cal = (function () {
   const { fmt, store } = Tuk;
   const VIEW_KEY = "tuk.view.v1";
-  const state = { view: "today", cursor: fmt.startOfDay(new Date()), selected: null, highlight: [] };
+  const state = { view: "week", cursor: fmt.startOfDay(new Date()), selected: null, highlight: [] };
   const listeners = [];
 
   try {
     const v = localStorage.getItem(VIEW_KEY);
-    if (v === "week" || v === "month" || v === "today") state.view = v;
+    if (v === "week" || v === "month" || v === "day") state.view = v;
   } catch (e) {}
 
   function addDays(d, n) {
@@ -116,7 +116,8 @@ Tuk.cal = (function () {
   }
 
   function shift(n) {
-    if (state.view === "week") state.cursor = addDays(state.cursor, 7 * n);
+    if (state.view === "day") state.cursor = addDays(state.cursor, n);
+    else if (state.view === "week") state.cursor = addDays(state.cursor, 7 * n);
     else if (state.view === "month") state.cursor = new Date(state.cursor.getFullYear(), state.cursor.getMonth() + n, 1);
     emit();
   }
@@ -157,6 +158,11 @@ Tuk.cal = (function () {
 
   function title() {
     const c = state.cursor;
+    if (state.view === "day") {
+      const lbl = fmt.dayLabel(c);
+      const parts = lbl.split(" · ");
+      return { main: parts[parts.length - 1], sub: parts.length > 1 ? parts[0] : "" };
+    }
     if (state.view === "week") {
       const ws = weekStart(c);
       const we = addDays(ws, 6);
@@ -171,45 +177,33 @@ Tuk.cal = (function () {
   function isCurrent() {
     const now = new Date();
     if (state.view === "week") return fmt.dayKey(weekStart(now)) === fmt.dayKey(weekStart(state.cursor));
+    if (state.view === "day") return fmt.dayKey(now) === fmt.dayKey(state.cursor);
     return now.getFullYear() === state.cursor.getFullYear() && now.getMonth() === state.cursor.getMonth();
   }
 
+  const ICON = {
+    menu: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"/></svg>',
+    panel: '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="M12.5 3.5v13"/></svg>',
+    prev: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg>',
+    next: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg>'
+  };
+
   function headerHtml() {
     const t = title();
-    const label = state.view === "week" ? "주" : "달";
+    const views = [["day", "일"], ["week", "주"], ["month", "월"]].filter(([v]) => v !== "day" || Tuk.week.renderDay);
     return (
-      '<div class="cal-head">' +
-        '<div class="cal-title"><h2>' + t.main + "</h2>" + (t.sub ? '<span class="cal-sub">' + t.sub + "</span>" : "") + "</div>" +
-        '<div class="cal-nav">' +
-          '<button type="button" class="btn-ghost cal-today" data-cal="today"' + (isCurrent() ? " disabled" : "") + ">이번 " + label + "</button>" +
-          '<button type="button" class="btn-ghost cal-arrow" data-cal="prev" aria-label="이전 ' + label + '">‹</button>' +
-          '<button type="button" class="btn-ghost cal-arrow" data-cal="next" aria-label="다음 ' + label + '">›</button>' +
-        "</div>" +
-      "</div>"
+      '<button type="button" class="ic sb-open" data-act="toggle-sidebar" aria-label="사이드바 열기" title="사이드바 열기 ([)">' + ICON.menu + "</button>" +
+      '<div class="cal-title"><h2>' + t.main + "</h2>" + (t.sub ? '<span class="cal-sub">' + t.sub + "</span>" : "") + "</div>" +
+      '<div class="cal-nav">' +
+        '<button type="button" class="ic" data-cal="prev" aria-label="이전" title="이전 (←)">' + ICON.prev + "</button>" +
+        '<button type="button" class="chip-btn" data-cal="today"' + (isCurrent() ? ' aria-pressed="true"' : "") + ' title="오늘 (T)">오늘</button>' +
+        '<button type="button" class="ic" data-cal="next" aria-label="다음" title="다음 (→)">' + ICON.next + "</button>" +
+      "</div>" +
+      '<div class="seg" role="tablist" aria-label="보기">' + views.map(([v, label]) =>
+        '<button type="button" role="tab" class="seg-btn" data-view="' + v + '" aria-selected="' + (state.view === v) + '" title="' + label + " 보기 (" + { day: "D", week: "W", month: "M" }[v] + ')">' + label + "</button>"
+      ).join("") + "</div>" +
+      '<button type="button" class="ic rp-toggle" data-act="toggle-panel" aria-label="오늘 패널" title="오늘 패널 (])">' + ICON.panel + "</button>"
     );
-  }
-
-  function simpleDays(from, days) {
-    const occ = occurrences(from, addDays(from, days));
-    let html = '<div class="cal-simple">';
-    for (let i = 0; i < days; i++) {
-      const d = addDays(from, i);
-      const list = occ.filter(o => fmt.dayKey(o.start) === fmt.dayKey(d));
-      html += '<div class="cal-simple-day"><h3 class="day-label">' + fmt.dayLabel(d) + "</h3>" +
-        (list.length ? "<ul>" + list.map(o => "<li>" + (o.allDay ? "" : fmt.time(o.start) + " ") + fmt.escape(o.item.title) + "</li>").join("") + "</ul>" : '<p class="empty">일정 없음</p>') +
-        "</div>";
-    }
-    return html + "</div>";
-  }
-
-  function renderWeek(el) {
-    el.innerHTML = headerHtml() + simpleDays(weekStart(state.cursor), 7);
-  }
-
-  function renderMonth(el) {
-    const first = new Date(state.cursor.getFullYear(), state.cursor.getMonth(), 1);
-    const days = new Date(state.cursor.getFullYear(), state.cursor.getMonth() + 1, 0).getDate();
-    el.innerHTML = headerHtml() + simpleDays(first, days);
   }
 
   function bindNav(el) {
@@ -223,5 +217,5 @@ Tuk.cal = (function () {
     });
   }
 
-  return { state, conflicts, setView, shift, goToday, goTo, flash, select, subscribe, occurrences, weekStart, monthGridStart, addDays, headerHtml, renderWeek, renderMonth, bindNav };
+  return { state, conflicts, setView, shift, goToday, goTo, flash, select, subscribe, occurrences, weekStart, monthGridStart, addDays, headerHtml, ICON, bindNav };
 })();

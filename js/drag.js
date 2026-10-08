@@ -144,7 +144,7 @@ Tuk.drag = (function () {
     root.addEventListener("pointerdown", e => {
       if (e.button !== 0) return;
       const el = e.target.closest(selector);
-      if (el) begin(e, el, mode);
+      if (el) begin(e, el, mode === "auto" ? (el.classList.contains("mo-chip") ? "month" : "week") : mode);
     });
     root.addEventListener("click", e => {
       if (suppressClick) { e.stopImmediatePropagation(); e.preventDefault(); }

@@ -11,29 +11,30 @@
 <meta name="theme-color" content="#1C2433">
 </head>
 <body>
-<header class="topbar">
-  <h1 class="brand">툭</h1>
-  <p class="clock" id="clock"></p>
-  <nav class="viewnav" aria-label="화면">
-    <button type="button" class="viewtab" data-view="today">오늘</button>
-    <button type="button" class="viewtab" data-view="week">주</button>
-    <button type="button" class="viewtab" data-view="month">월</button>
-  </nav>
-  <button class="icon-btn" id="openSettings" type="button" aria-label="설정">설정</button>
-</header>
-
-<main class="layout">
-  <section class="capture" id="capture" aria-label="입력"></section>
-  <div class="view" id="viewToday">
-    <section class="now" id="now" aria-label="지금과 다음"></section>
-    <div class="columns">
-      <section class="panel" id="today" aria-label="오늘 남은 것"></section>
-      <section class="panel" id="upcoming" aria-label="앞으로의 일정"></section>
+<div class="app" id="app">
+  <aside class="sb" id="sidebar" aria-label="사이드바">
+    <div class="sb-head">
+      <span class="brand">툭</span>
+      <span class="sb-name">플래너</span>
+      <button type="button" class="ic" data-act="toggle-sidebar" aria-label="사이드바 접기" title="사이드바 접기 ([)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M11 5 6 10l5 5M15 5l-5 5 5 5"/></svg></button>
     </div>
-  </div>
-  <section class="view cal" id="viewWeek" aria-label="주간 보기" hidden></section>
-  <section class="view cal" id="viewMonth" aria-label="월간 보기" hidden></section>
-</main>
+    <button type="button" class="sb-search" data-act="palette"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="m13 13 4 4"/></svg><span>검색하거나 추가</span><kbd class="kbd-mod">Ctrl K</kbd></button>
+    <div class="sb-block" id="miniCal"></div>
+    <div class="sb-block sb-grow" id="sbTasks"></div>
+    <div class="sb-foot">
+      <button type="button" class="sb-link" data-act="widget">화면에 띄우기</button>
+      <button type="button" class="sb-link" data-act="shortcuts">단축키</button>
+      <button type="button" class="sb-link" id="openSettings">설정</button>
+    </div>
+  </aside>
+  <main class="main" id="main">
+    <header class="mh" id="mainHead"></header>
+    <section class="capture" id="capture" aria-label="입력"></section>
+    <section class="cal-body" id="calBody" aria-label="캘린더"></section>
+  </main>
+  <aside class="rp" id="panel" aria-label="오늘"></aside>
+  <div class="scrim" data-act="close-drawers"></div>
+</div>
 
 <script src="js/format.js"></script>
 <script src="js/store.js"></script>
