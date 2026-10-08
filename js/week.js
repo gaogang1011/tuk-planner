@@ -55,12 +55,27 @@ Tuk.week = (function () {
     const hl = cal.state.highlight || [];
 
     let head = '<div class="wk-corner"></div>';
+    let allday = '<div class="wk-corner wk-alllabel">종일</div>';
     let cols = "";
     days.forEach((d, i) => {
       const key = fmt.dayKey(d);
       const isToday = key === fmt.dayKey(now);
       const dayClass = (i === 5 ? " is-sat" : "") + (i === 6 ? " is-sun" : "") + (isToday ? " is-today" : "");
-      head += '<div class="wk-dayhead' + dayClass + '" data-day="' + key + '"><span class="wk-dow">' + WEEK[i] + '</span><span class="wk-date">' + d.getDate() + "</span></div>";
+      const dayTimed = occ.filter(o => o.kind === "event" && !o.allDay && fmt.dayKey(o.start) === key);
+      const busyMin = dayTimed.reduce((sum, o) => sum + (o.end - o.start) / 60000, 0);
+      const load = dayTimed.length ? "일정 " + dayTimed.length + " · " + fmt.duration(busyMin * 60000) : "비어 있음";
+      const loadPct = Math.min(100, busyMin / (10 * 60) * 100);
+      head += '<div class="wk-dayhead' + dayClass + '" data-day="' + key + '">' +
+        '<div class="wk-daytop"><span class="wk-dow">' + WEEK[i] + '</span><span class="wk-date">' + d.getDate() + "</span></div>" +
+        '<span class="wk-load">' + load + "</span>" +
+        '<span class="wk-loadbar" aria-hidden="true"><span style="width:' + loadPct + '%"></span></span>' +
+      "</div>";
+      const chips = occ.filter(o => o.allDay && fmt.dayKey(o.start) === key).map(o => {
+        const cls = "wk-chip wk-chip-" + o.kind + (o.item.done ? " is-done" : "") + (hl.includes(o.item.id) ? " is-new" : "");
+        const label = o.kind === "task" ? (o.start.getHours() === 23 && o.start.getMinutes() === 59 ? "" : fmt.time(o.start) + " ") + o.item.title : o.item.title;
+        return '<button type="button" class="' + cls + '" data-id="' + o.item.id + '" title="' + (o.kind === "task" ? "마감: " : "종일: ") + fmt.escape(o.item.title) + '">' + fmt.escape(label) + "</button>";
+      }).join("");
+      allday += '<div class="wk-allcell' + dayClass + '">' + chips + "</div>";
       const timed = occ.filter(o => o.kind === "event" && !o.allDay && fmt.dayKey(o.start) === key).map(o => {
         const dayEnd = new Date(d.getTime() + endH * 3600000);
         return Object.assign({}, o, { end: o.end > dayEnd ? dayEnd : o.end });
@@ -85,6 +100,7 @@ Tuk.week = (function () {
       cal.headerHtml() +
       '<div class="wk">' +
         '<div class="wk-head">' + head + "</div>" +
+        '<div class="wk-allday">' + allday + "</div>" +
         '<div class="wk-scroll" id="wkScroll">' +
           '<div class="wk-body" style="height:' + height + 'px;--hour:' + HOUR_PX + 'px">' +
             '<div class="wk-gutter">' + gutter + "</div>" +
@@ -102,7 +118,7 @@ Tuk.week = (function () {
 
   function bind(el) {
     el.addEventListener("click", e => {
-      const ev = e.target.closest(".wk-ev");
+      const ev = e.target.closest(".wk-ev, .wk-chip");
       if (ev) Tuk.detail.open(ev.dataset.id);
     });
   }

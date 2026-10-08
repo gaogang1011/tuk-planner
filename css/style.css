@@ -658,17 +658,53 @@ button { cursor: pointer; }
 
 .wk { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 
-.wk-head, .wk-body { display: grid; grid-template-columns: 44px repeat(7, minmax(0, 1fr)); }
+.wk-head, .wk-body, .wk-allday { display: grid; grid-template-columns: 44px repeat(7, minmax(0, 1fr)); }
 
 .wk-head { border-bottom: 1px solid var(--line); background: var(--surface); }
 
 .wk-dayhead {
-  padding: 8px 6px 6px;
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
+  padding: 8px 8px 6px;
+  display: grid;
+  gap: 2px;
   border-left: 1px solid var(--line);
+  min-width: 0;
 }
+
+.wk-daytop { display: flex; align-items: baseline; gap: 6px; }
+
+.wk-load { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.wk-loadbar { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+
+.wk-loadbar span { display: block; height: 100%; background: var(--accent); }
+
+.wk-allday { border-bottom: 1px solid var(--line); background: var(--paper); }
+
+.wk-alllabel { font-size: 10px; color: var(--muted); padding: 6px 4px; line-height: 1.2; text-align: right; }
+
+.wk-allcell { border-left: 1px solid var(--line); padding: 4px; display: grid; gap: 3px; align-content: start; min-height: 30px; min-width: 0; }
+
+.wk-chip {
+  border: 0;
+  border-radius: 5px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wk-chip-event { background: var(--accent); color: #fff; }
+
+.wk-chip-task { background: var(--free-soft); color: var(--free); }
+
+.wk-chip-task::before { content: "마감 "; font-weight: 600; opacity: 0.8; }
+
+.wk-chip.is-done { text-decoration: line-through; opacity: 0.55; }
+
+.wk-chip.is-new { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 .wk-dow { font-size: 13px; color: var(--muted); font-weight: 600; }
 
