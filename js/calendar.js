@@ -87,6 +87,28 @@ Tuk.cal = (function () {
     return out.sort((a, b) => a.start - b.start);
   }
 
+  function conflicts(candidate, limit) {
+    if (!candidate || candidate.type !== "event" || candidate.allDay) return [];
+    const s = fmt.parse(candidate.start);
+    if (!s) return [];
+    const temp = Object.assign({ id: "__candidate" }, candidate);
+    const to = candidate.repeat ? addDays(s, 56) : addDays(fmt.startOfDay(s), 1);
+    const mine = occurrences(s, to, [temp]).filter(o => !o.allDay);
+    if (!mine.length) return [];
+    const others = occurrences(fmt.startOfDay(s), addDays(to, 1)).filter(o => o.kind === "event" && !o.allDay && !o.item.done && o.item.id !== candidate.id);
+    const hits = [];
+    const seen = new Set();
+    mine.forEach(a => {
+      others.forEach(b => {
+        if (a.start < b.end && b.start < a.end && !seen.has(b.key)) {
+          seen.add(b.key);
+          hits.push(b);
+        }
+      });
+    });
+    return hits.slice(0, limit || 3);
+  }
+
   function setView(v) {
     state.view = v;
     try { localStorage.setItem(VIEW_KEY, v); } catch (e) {}
@@ -200,5 +222,5 @@ Tuk.cal = (function () {
     });
   }
 
-  return { state, setView, shift, goToday, goTo, flash, select, subscribe, occurrences, weekStart, monthGridStart, addDays, headerHtml, renderWeek, renderMonth, bindNav };
+  return { state, conflicts, setView, shift, goToday, goTo, flash, select, subscribe, occurrences, weekStart, monthGridStart, addDays, headerHtml, renderWeek, renderMonth, bindNav };
 })();

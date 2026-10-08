@@ -111,8 +111,24 @@ Tuk.capture = (function () {
           (it.repeat ? '<span class="owner">' + fmt.escape(Tuk.detail.repeatLabel(it.repeat)) + "</span>" : "") + "</span>" +
         '<input class="p-when" type="datetime-local" data-field="when" value="' + fmt.escape(when || "") + '" aria-label="' + (it.type === "event" ? "시작 시간" : "마감") + '">' +
         '<button type="button" class="p-del" data-act="drop" aria-label="빼기">빼기</button>' +
+        conflictHtml(it) +
       "</li>"
     );
+  }
+
+  function conflictHtml(it) {
+    if (it.type !== "event" || !Tuk.cal) return "";
+    const hits = Tuk.cal.conflicts(it, 50);
+    if (!hits.length) return "";
+    const groups = [];
+    hits.forEach(h => {
+      const g = groups.find(x => x.id === h.item.id);
+      if (g) g.count++;
+      else groups.push({ id: h.item.id, first: h, count: 1 });
+    });
+    return '<p class="p-conflict" role="note">겹치는 일정: ' + groups.slice(0, 3).map(g =>
+      fmt.escape(fmt.shortDate(g.first.start) + " " + g.first.item.title) + (g.count > 1 ? " 외 " + (g.count - 1) + "회" : "")
+    ).join(", ") + "</p>";
   }
 
   async function submit(text, analyze, fallbackOne) {
@@ -152,6 +168,9 @@ Tuk.capture = (function () {
       if (e.target.dataset.field === "when") {
         const v = e.target.value || null;
         if (it.type === "event") { it.start = v; it.allDay = false; it.end = null; } else it.due = v;
+        const old = row.querySelector(".p-conflict");
+        if (old) old.remove();
+        row.insertAdjacentHTML("beforeend", conflictHtml(it));
       }
     });
     root.addEventListener("click", e => {
