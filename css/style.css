@@ -972,3 +972,34 @@ button { cursor: pointer; }
 }
 
 .p-conflict::before { content: "! "; font-weight: 800; }
+
+.wk-ev, .wk-chip, .mo-chip { touch-action: manipulation; }
+
+.is-dragging { position: relative; z-index: 20; opacity: 0.85; box-shadow: 0 6px 16px rgba(20, 26, 36, 0.25); pointer-events: none; }
+
+.wk-ev.is-dragging { position: absolute; }
+
+body.dragging { cursor: grabbing; user-select: none; }
+
+.drop-target { background: color-mix(in srgb, var(--accent) 10%, transparent) !important; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 20px);
+  margin: 0;
+  background: var(--ink);
+  color: var(--surface);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 50;
+  max-width: calc(100vw - 32px);
+}
+
+.toast.is-on { opacity: 1; transform: translate(-50%, 0); }

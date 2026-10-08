@@ -76,7 +76,7 @@ Tuk.week = (function () {
         const label = o.kind === "task" ? (o.start.getHours() === 23 && o.start.getMinutes() === 59 ? "" : fmt.time(o.start) + " ") + o.item.title : o.item.title;
         return '<button type="button" class="' + cls + '" data-id="' + o.item.id + '" title="' + (o.kind === "task" ? "마감: " : "종일: ") + fmt.escape(o.item.title) + '">' + fmt.escape(label) + "</button>";
       }).join("");
-      allday += '<div class="wk-allcell' + dayClass + '">' + chips + "</div>";
+      allday += '<div class="wk-allcell' + dayClass + '" data-day="' + key + '">' + chips + "</div>";
       const timed = occ.filter(o => o.kind === "event" && !o.allDay && fmt.dayKey(o.start) === key).map(o => {
         const dayEnd = new Date(d.getTime() + endH * 3600000);
         return Object.assign({}, o, { end: o.end > dayEnd ? dayEnd : o.end });

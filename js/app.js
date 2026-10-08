@@ -55,6 +55,8 @@
     if (e.target.dataset.brief === "ai") Tuk.now.requestAiBrief(e.target);
   });
   Tuk.detail.mount();
+  Tuk.drag.bind(viewWeek, ".wk-ev, .wk-chip", "week");
+  Tuk.drag.bind(viewMonth, ".mo-chip", "month");
   Tuk.week.bind(viewWeek);
   Tuk.month.bind(viewMonth);
   Tuk.month.bindPanel(viewMonth);
