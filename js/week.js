@@ -61,15 +61,25 @@ Tuk.week = (function () {
     return free.filter(([a, b]) => b - a >= 60 * 60000);
   }
 
+  function span() {
+    const isDay = cal.state.view === "day";
+    return { start: isDay ? fmt.startOfDay(cal.state.cursor) : cal.weekStart(cal.state.cursor), n: isDay ? 1 : 7 };
+  }
+
+  function dowIndex(d) {
+    return (d.getDay() + 6) % 7;
+  }
+
   function renderMobile(el) {
     const now = new Date();
-    const ws = cal.weekStart(cal.state.cursor);
-    const occ = cal.occurrences(ws, cal.addDays(ws, 7));
+    const { start: ws, n } = span();
+    const occ = cal.occurrences(ws, cal.addDays(ws, n));
     const hl = cal.state.highlight || [];
     let strip = "";
     let cards = "";
-    for (let i = 0; i < 7; i++) {
-      const d = cal.addDays(ws, i);
+    for (let k = 0; k < n; k++) {
+      const d = cal.addDays(ws, k);
+      const i = dowIndex(d);
       const key = fmt.dayKey(d);
       const holiday = Tuk.holidays.get(key);
       const isToday = key === fmt.dayKey(now);
@@ -93,16 +103,16 @@ Tuk.week = (function () {
           (rows || free ? '<ul class="wm-list">' + rows + free + "</ul>" : "") +
         "</section>";
     }
-    el.innerHTML = '<nav class="ws-strip" aria-label="요일">' + strip + "</nav>" + '<div class="wm">' + cards + "</div>";
+    el.innerHTML = (n === 1 ? "" : '<nav class="ws-strip" aria-label="요일">' + strip + "</nav>") + '<div class="wm">' + cards + "</div>";
   }
 
   function render(el) {
     if (mobile.matches) return renderMobile(el);
     const now = new Date();
-    const ws = cal.weekStart(cal.state.cursor);
+    const { start: ws, n } = span();
     const days = [];
-    for (let i = 0; i < 7; i++) days.push(cal.addDays(ws, i));
-    const occ = cal.occurrences(ws, cal.addDays(ws, 7));
+    for (let i = 0; i < n; i++) days.push(cal.addDays(ws, i));
+    const occ = cal.occurrences(ws, cal.addDays(ws, n));
     const { startH, endH } = range(days, occ);
     const height = (endH - startH) * HOUR_PX;
     const hl = cal.state.highlight || [];
@@ -110,7 +120,8 @@ Tuk.week = (function () {
     let head = '<div class="wk-corner"></div>';
     let allday = '<div class="wk-corner wk-alllabel">종일</div>';
     let cols = "";
-    days.forEach((d, i) => {
+    days.forEach(d => {
+      const i = dowIndex(d);
       const key = fmt.dayKey(d);
       const isToday = key === fmt.dayKey(now);
       const holiday = Tuk.holidays.get(key);
@@ -158,7 +169,7 @@ Tuk.week = (function () {
     const prevTop = prev ? prev.scrollTop : null;
     const viewKey = fmt.dayKey(ws) + ":" + days.length;
     el.innerHTML =
-      '<div class="wk">' +
+      '<div class="wk' + (n === 1 ? " is-day" : "") + '" style="--days:' + n + '">' +
         '<div class="wk-head">' + head + "</div>" +
         '<div class="wk-allday">' + allday + "</div>" +
         '<div class="wk-scroll" id="wkScroll">' +
@@ -176,7 +187,7 @@ Tuk.week = (function () {
     if (keepScroll) { scroller.scrollTop = prevTop; return; }
     const focusH = cal.state.highlight && cal.state.highlight.length
       ? Math.min.apply(null, occ.filter(o => hl.includes(o.item.id) && !o.allDay).map(o => o.start.getHours()).concat([24]))
-      : (fmt.dayKey(cal.weekStart(now)) === fmt.dayKey(ws) ? now.getHours() - 1 : 9);
+      : (now >= ws && now < cal.addDays(ws, n) ? now.getHours() - 1 : 9);
     scroller.scrollTop = Math.max(0, (Math.min(focusH, 22) - startH) * HOUR_PX);
   }
 
@@ -202,5 +213,5 @@ Tuk.week = (function () {
     });
   }
 
-  return { render, bind, lanes, HOUR_PX, mobile };
+  return { render, renderDay: render, bind, lanes, HOUR_PX, mobile };
 })();
