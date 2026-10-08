@@ -15,6 +15,7 @@
     views.renderList(upcoming);
   }
 
+  Tuk.settings.mount(document.getElementById("openSettings"));
   Tuk.capture.mount(capture);
   views.bindList(upcoming, render);
   store.subscribe(render);
