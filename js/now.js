@@ -134,13 +134,75 @@ Tuk.now = (function () {
       '<p class="rb-legend"><span class="lg lg-event"></span>일정 <span class="lg lg-free"></span>빈 시간</p>';
   }
 
+  let aiBrief = null;
+
+  function briefFacts(now) {
+    const st = status(now);
+    const gaps = freeGaps(now, st.list, 20);
+    const events = st.list.filter(x => fmt.dayKey(x.start) === fmt.dayKey(now) && x.end > now);
+    const tasks = store.all().filter(it => it.type === "task" && !it.done);
+    const dueToday = tasks.filter(it => fmt.parse(it.due) && fmt.dayKey(fmt.parse(it.due)) === fmt.dayKey(now) && fmt.parse(it.due) >= now);
+    const overdue = tasks.filter(it => fmt.parse(it.due) && fmt.parse(it.due) < now);
+    const longest = gaps.find(g => g.end - g.start >= 60 * 60000) || gaps.slice().sort((a, b) => (b.end - b.start) - (a.end - a.start))[0] || null;
+    return {
+      events: events.map(x => ({ title: x.item.title, start: fmt.time(x.start), end: fmt.time(x.end) })),
+      freeTime: gaps.map(g => ({ start: fmt.time(g.start), end: g.until ? fmt.time(g.end) : "24:00", minutes: Math.round((g.end - g.start) / 60000) })),
+      dueToday: dueToday.map(it => it.title),
+      overdue: overdue.map(it => it.title),
+      topTasks: suggestions(now).map(p => ({ title: p.item.title, urgency: p.u.label || "마감 없음" })),
+      longest
+    };
+  }
+
+  function templateBrief(now) {
+    const f = briefFacts(now);
+    const parts = [];
+    if (!f.events.length && !f.dueToday.length) parts.push("오늘 남은 일정과 마감은 없어요.");
+    else parts.push("오늘 남은 일정 " + f.events.length + "개, 오늘 마감 " + f.dueToday.length + "개가 있어요.");
+    if (f.overdue.length) parts.push("마감이 지난 할 일이 " + f.overdue.length + "개 있으니 먼저 확인하세요.");
+    if (f.longest) {
+      const range = fmt.time(f.longest.start) + "–" + (f.longest.until ? fmt.time(f.longest.end) : "24:00");
+      parts.push("다음으로 넉넉한 빈 시간은 " + range + ", " + fmt.duration(f.longest.end - f.longest.start) + "이에요.");
+      if (f.topTasks.length) parts.push("이때 '" + f.topTasks[0].title + "'부터 처리하면 좋아요.");
+    }
+    return parts.join(" ");
+  }
+
+  async function requestAiBrief(btn) {
+    const cfg = Tuk.settings.effective();
+    const now = new Date();
+    btn.disabled = true;
+    btn.textContent = "쓰는 중…";
+    try {
+      const facts = briefFacts(now);
+      delete facts.longest;
+      aiBrief = { day: fmt.dayKey(now), text: await Tuk.ai.briefing(cfg, facts, now), error: "" };
+    } catch (err) {
+      aiBrief = { day: fmt.dayKey(now), text: "", error: err.message };
+    }
+    const el = btn.closest(".panel");
+    if (el) renderToday(el);
+  }
+
+  function briefHtml(now) {
+    const cfg = Tuk.settings.effective();
+    const useAi = aiBrief && aiBrief.day === fmt.dayKey(now) && aiBrief.text;
+    return (
+      '<div class="brief">' +
+        '<p class="brief-text">' + fmt.escape(useAi ? aiBrief.text : templateBrief(now)) + "</p>" +
+        (aiBrief && aiBrief.error ? '<p class="brief-error">' + fmt.escape(aiBrief.error) + "</p>" : "") +
+        (cfg.enabled ? '<button type="button" class="brief-ai" data-brief="ai">' + (useAi ? "AI 브리핑 다시 받기" : "AI 브리핑 받기") + "</button>" : "") +
+      "</div>"
+    );
+  }
+
   function renderToday(el) {
     const now = new Date();
     const st = status(now);
     const gaps = freeGaps(now, st.list, 20);
     const picks = suggestions(now);
     const first = gaps[0];
-    let html = '<h2 class="panel-title">빈 시간에 할 일</h2>';
+    let html = '<h2 class="panel-title">오늘 브리핑</h2>' + briefHtml(now) + '<h2 class="panel-title gap-title">빈 시간에 할 일</h2>';
     if (first) {
       const startsNow = first.start - now < 60000;
       html +=
@@ -177,5 +239,5 @@ Tuk.now = (function () {
     el.innerHTML = html;
   }
 
-  return { render, renderToday, status, spans, freeGaps, suggestions, urgency, DEFAULT_MIN };
+  return { render, renderToday, requestAiBrief, templateBrief, status, spans, freeGaps, suggestions, urgency, DEFAULT_MIN };
 })();

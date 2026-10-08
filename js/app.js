@@ -23,6 +23,9 @@
   Tuk.capture.mount(capture);
   views.bindList(upcoming, render);
   views.bindList(todayEl, render);
+  todayEl.addEventListener("click", e => {
+    if (e.target.dataset.brief === "ai") Tuk.now.requestAiBrief(e.target);
+  });
   store.subscribe(render);
   render();
   tick();

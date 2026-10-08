@@ -41,7 +41,8 @@ Tuk.ai = (function () {
     try { return JSON.parse(body); } catch (e) { throw new Error("AI 응답을 읽지 못했어요."); }
   }
 
-  async function complete(settings, system, user) {
+  async function complete(settings, system, user, opts) {
+    const json = !(opts && opts.text);
     const s = resolve(settings);
     if (!s.apiKey) throw new Error("API 키를 입력해 주세요.");
     if (s.provider === "gemini") {
@@ -51,7 +52,7 @@ Tuk.ai = (function () {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
           contents: [{ role: "user", parts: [{ text: user }] }],
-          generationConfig: { temperature: 0, responseMimeType: "application/json" }
+          generationConfig: json ? { temperature: 0, responseMimeType: "application/json" } : { temperature: 0.4 }
         })
       });
       const parts = (((data.candidates || [])[0] || {}).content || {}).parts || [];
@@ -146,11 +147,23 @@ Tuk.ai = (function () {
     return clean(extractJson(out));
   }
 
+  async function briefing(settings, facts, now) {
+    const system = [
+      "너는 바쁜 대학생의 하루를 정리해 주는 비서다.",
+      "현재 시각: " + nowText(now || new Date()),
+      "주어진 JSON(오늘 남은 일정, 빈 시간, 할 일)을 보고 한국어 존댓말로 2~3문장 브리핑을 쓴다.",
+      "남은 일정 수와 마감을 먼저 말하고, 가장 쓸 만한 빈 시간에 무엇을 하면 좋을지 구체적으로 추천한다.",
+      "목록, 마크다운, 이모지 없이 평문만 쓴다. 주어진 정보에 없는 일정은 만들지 않는다."
+    ].join("\n");
+    const out = await complete(settings, system, JSON.stringify(facts), { text: true });
+    return out.replace(/[*#`]/g, "").trim().slice(0, 400);
+  }
+
   async function ping(settings) {
     const out = await complete(settings, "JSON으로만 답한다.", "{\"ok\": true}를 그대로 출력해.");
     extractJson(out);
     return true;
   }
 
-  return { complete, parseLine, extractMemo, ping, clean, extractJson, nowText, ITEM_RULES };
+  return { complete, parseLine, extractMemo, briefing, ping, clean, extractJson, nowText, ITEM_RULES };
 })();
