@@ -40,7 +40,9 @@
   });
 
   document.addEventListener("keydown", e => {
-    if (e.target.closest("input, textarea, select, dialog") || e.metaKey || e.ctrlKey || e.altKey) return;
+    const t = e.target;
+    if ((t && t.closest && t.closest("input, textarea, select, dialog, [contenteditable]")) || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (document.querySelector("dialog[open]")) return;
     if (cal.state.view === "today") return;
     if (e.key === "ArrowLeft") cal.shift(-1);
     if (e.key === "ArrowRight") cal.shift(1);
