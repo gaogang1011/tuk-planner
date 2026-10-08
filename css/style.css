@@ -1616,3 +1616,23 @@ button.ag-row:hover { background: var(--hover); }
 @media (prefers-reduced-motion: reduce) {
   .rp, .sb, .scrim { transition: none; }
 }
+
+body.wg-body { overflow: auto; background: var(--bg); }
+
+.wg { display: grid; gap: 12px; padding: 12px 14px 14px; }
+
+.wg-head { display: flex; align-items: center; gap: 8px; }
+
+.wg-head .brand { font-size: 17px; }
+
+.wg-clock { flex: 1; color: var(--muted); font-size: 13px; }
+
+.wg-next { background: var(--now-bg); color: var(--now-ink); border-radius: var(--radius-lg); padding: 12px 14px; }
+
+.wg-kicker { margin: 0; font-size: 12px; color: var(--now-muted); }
+
+.wg-big { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
+
+.wg-big.is-quiet { font-size: 20px; color: var(--now-muted); }
+
+.wg-sub { margin: 2px 0 0; font-size: 13px; opacity: 0.9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
