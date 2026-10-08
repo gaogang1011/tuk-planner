@@ -64,6 +64,7 @@
   cal.bindNav(viewWeek);
   cal.bindNav(viewMonth);
   cal.subscribe(render);
+  if (Tuk.week.mobile.addEventListener) Tuk.week.mobile.addEventListener("change", render);
   store.subscribe(render);
   render();
   tick();

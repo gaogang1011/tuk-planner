@@ -1011,3 +1011,110 @@ body.dragging { cursor: grabbing; user-select: none; }
 @media (prefers-reduced-motion: reduce) {
   .wk-ev.is-new, .wk-chip.is-new, .mo-chip.is-new { animation: none; }
 }
+
+.ws-strip, .wm { display: none; }
+
+@media (max-width: 700px) {
+  .ws-strip {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+
+  .ws-day {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    padding: 6px 0;
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--ink);
+  }
+
+  .ws-day .wk-date { font-size: 17px; }
+
+  .ws-day .wk-loadbar { width: 70%; }
+
+  .ws-day.is-today { background: var(--ink); }
+
+  .ws-day.is-today .wk-dow, .ws-day.is-today .wk-date { color: var(--surface); }
+
+  .wm { display: grid; gap: 10px; }
+
+  .wm-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; scroll-margin-top: 12px; }
+
+  .wm-card.is-today { border-color: var(--ink); }
+
+  .wm-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+
+  .wm-head h3 { margin: 0; font-size: 15px; font-weight: 800; }
+
+  .wm-card.is-sat .wm-head h3 { color: var(--accent); }
+
+  .wm-card.is-sun .wm-head h3 { color: var(--due); }
+
+  .wm-head .wk-load { flex: 1; }
+
+  .wm-add {
+    border: 1px solid var(--line);
+    background: none;
+    border-radius: 999px;
+    width: 28px;
+    height: 28px;
+    font-size: 17px;
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  .wm-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 4px; }
+
+  .wm-item {
+    width: 100%;
+    border: 0;
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 6px;
+    padding: 7px 10px;
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    text-align: left;
+  }
+
+  .wm-task { border-left-color: var(--free); background: var(--free-soft); }
+
+  .wm-item.is-done .mp-title { text-decoration: line-through; opacity: 0.6; }
+
+  .wm-item.is-new { outline: 2px solid var(--accent); }
+
+  .wm-free { font-size: 12px; font-weight: 600; color: var(--free); padding: 4px 10px; border: 1.5px dashed color-mix(in srgb, var(--free) 50%, transparent); border-radius: 6px; }
+
+  #viewWeek .wk, #viewWeek .wk-legend { display: none; }
+
+  .cal-title h2 { font-size: 20px; }
+
+  .mo-day { min-height: 58px; padding: 4px 2px 6px; align-items: center; }
+
+  .mo-top { justify-content: center; padding: 0; }
+
+  .mo-holiday, .mo-items { display: none; }
+
+  .mo-dots { display: flex; gap: 2px; justify-content: center; min-height: 6px; }
+
+  .dot { width: 5px; height: 5px; border-radius: 50%; }
+
+  .dot-event { background: var(--accent); }
+
+  .dot-task { background: var(--free); }
+
+  .mo-dow { text-align: center; padding: 6px 0; }
+}
+
+.cal-title h2 { white-space: nowrap; }
+
+@media (max-width: 700px) {
+  .cal-head { flex-wrap: nowrap; }
+  .cal-title { flex-direction: column; gap: 0; }
+  .cal-sub { font-size: 13px; }
+  .cal-nav .cal-today { padding: 6px 10px; font-size: 14px; }
+}
