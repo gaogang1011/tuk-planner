@@ -96,6 +96,11 @@ Tuk.ai = (function () {
           out.start = dt(x.start);
           if (dt(x.end)) out.end = dt(x.end);
           if (x.allDay === true && out.start) out.allDay = true;
+          if (x.repeat && typeof x.repeat === "object" && ["weekly", "daily", "weekdays"].includes(x.repeat.freq)) {
+            out.repeat = { freq: x.repeat.freq, interval: x.repeat.interval === 2 ? 2 : 1 };
+            if (Array.isArray(x.repeat.days)) out.repeat.days = x.repeat.days.filter(n => Number.isInteger(n) && n >= 0 && n <= 6);
+            if (typeof x.repeat.until === "string" && /^\d{4}-\d{2}-\d{2}$/.test(x.repeat.until)) out.repeat.until = x.repeat.until;
+          }
         } else {
           out.due = dt(x.due);
         }
@@ -115,6 +120,7 @@ Tuk.ai = (function () {
     "- 오전/오후가 없는 1~7시는 오후로 본다.",
     "- \"그 전에\"는 앞 일정의 시작 시각을 마감으로, \"끝나고\"는 앞 일정이 끝난 날 23:59를 마감으로 한다.",
     "- 날짜 없이 시각만 있으면 지금 이후 가장 가까운 그 시각.",
+    "- 반복 일정(매주, 격주, 매일, 평일마다)이면 event에 \"repeat\": {\"freq\": \"weekly\" | \"daily\" | \"weekdays\", \"interval\": 1 또는 2(격주), \"days\": [요일 번호, 일=0 … 토=6], \"until\": \"YYYY-MM-DD\" 또는 null}을 넣고, start는 첫 회차로 한다. 반복이 아니면 repeat를 넣지 않는다.",
     "- title은 날짜·시간 표현과 \"하기\", \"해야 함\" 같은 어미를 빼고 짧은 명사구로."
   ].join("\n");
 

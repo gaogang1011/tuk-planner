@@ -169,17 +169,53 @@ Tuk.parser = (function () {
     return t;
   }
 
+  const REPEAT = /(매주|격주|매일|날마다|평일\s*(?:마다|에는|에)?|주중\s*(?:마다|에)?)/;
+
+  function findRepeat(state, now) {
+    const m = state.text.match(REPEAT);
+    if (!m) return null;
+    cut(state, m);
+    const word = m[1].replace(/\s/g, "");
+    let repeat;
+    if (/매일|날마다/.test(word)) repeat = { freq: "daily", interval: 1 };
+    else if (/평일|주중/.test(word)) repeat = { freq: "weekdays", interval: 1 };
+    else repeat = { freq: "weekly", interval: word === "격주" ? 2 : 1 };
+    if (repeat.freq === "weekly") {
+      const dm = state.text.match(/([월화수목금토일](?:\s*[,·/]?\s*[월화수목금토일])+)(?:요일)?/);
+      if (dm) {
+        const days = dm[1].replace(/[\s,·/]/g, "").split("").map(c => DAYS[c]);
+        repeat.days = Array.from(new Set(days));
+        const today = now.getDay();
+        const nearest = repeat.days.slice().sort((a, b) => ((a - today + 7) % 7) - ((b - today + 7) % 7))[0];
+        state.text = state.text.slice(0, dm.index) + " " + Object.keys(DAYS).find(k => DAYS[k] === nearest) + "요일 " + state.text.slice(dm.index + dm[0].length);
+      }
+    }
+    const um = state.text.match(/(?:~\s*)?(?:(\d{1,2})\s*월\s*(\d{1,2})\s*일|(\d{1,2})\s*월\s*(?:말|중)?)\s*까지/);
+    if (um) {
+      const y = now.getFullYear();
+      let until;
+      if (um[1]) until = new Date(y, +um[1] - 1, +um[2]);
+      else until = new Date(y, +um[3], 0);
+      if (until < startOfDay(now)) until.setFullYear(y + 1);
+      repeat.until = until.getFullYear() + "-" + pad(until.getMonth() + 1) + "-" + pad(until.getDate());
+      cut(state, um);
+    }
+    return repeat;
+  }
+
   function parseClause(raw, now, prev) {
     const relBefore = BEFORE_WORDS.test(raw);
     const relAfter = AFTER_WORDS.test(raw);
     const state = { text: " " + raw + " " };
+    const repeat = findRepeat(state, now);
     let date = findDate(state, now);
     const times = findTimes(state);
     const hasDue = /까지/.test(state.text);
     const isTaskWord = TASK_WORDS.test(state.text);
     const isEventWord = EVENT_WORDS.test(raw);
     let type;
-    if (hasDue || relBefore || relAfter) type = "task";
+    if (repeat && (times.start || isEventWord || !isTaskWord)) type = "event";
+    else if (hasDue || relBefore || relAfter) type = "task";
     else if (isTaskWord) type = "task";
     else if (isEventWord) type = "event";
     else type = times.start ? "event" : "task";
@@ -194,6 +230,14 @@ Tuk.parser = (function () {
     const out = { type, title };
 
     if (type === "event") {
+      if (repeat) {
+        out.repeat = repeat;
+        if (!date && repeat.freq === "weekdays") {
+          let d = startOfDay(now);
+          while (d.getDay() === 0 || d.getDay() === 6) d = addDays(d, 1);
+          date = d;
+        }
+      }
       if (times.start) {
         let d = date ? new Date(date) : startOfDay(now);
         d.setHours(times.start.h, times.start.m, 0, 0);

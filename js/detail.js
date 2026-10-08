@@ -30,9 +30,14 @@ Tuk.detail = (function () {
 
   function repeatLabel(r) {
     if (!r) return "";
-    if (r.freq === "daily") return "매일";
-    if (r.freq === "weekdays") return "평일마다";
-    if (r.freq === "weekly") return r.interval === 2 ? "격주" : "매주";
+    const until = r.until ? " (~" + r.until.slice(5).replace("-", "/") + ")" : "";
+    if (r.freq === "daily") return "매일" + until;
+    if (r.freq === "weekdays") return "평일마다" + until;
+    if (r.freq === "weekly") {
+      const names = ["일", "월", "화", "수", "목", "금", "토"];
+      const days = (r.days || []).slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(d => names[d]).join("·");
+      return (r.interval === 2 ? "격주" : "매주") + (days ? " " + days : "") + (r.until ? " (~" + r.until.slice(5).replace("-", "/") + ")" : "");
+    }
     return "반복";
   }
 

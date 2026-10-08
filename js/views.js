@@ -31,7 +31,8 @@ Tuk.views = (function () {
         '<input type="checkbox" class="item-check" aria-label="완료" ' + (it.done ? "checked" : "") + ">" +
         '<div class="item-body">' +
           '<button type="button" class="item-title" title="눌러서 수정">' + fmt.escape(it.title) + "</button>" +
-          '<span class="item-meta"><span class="kind kind-' + it.type + '">' + kind + "</span>" + fmt.escape(itemWhen(it, withDay)) + "</span>" +
+          '<span class="item-meta"><span class="kind kind-' + it.type + '">' + kind + "</span>" + fmt.escape(itemWhen(it, withDay)) +
+            (it.repeat && Tuk.detail ? '<span class="repeat-badge">' + Tuk.detail.repeatLabel(it.repeat) + "</span>" : "") + "</span>" +
         "</div>" +
         '<button type="button" class="item-del" aria-label="삭제">삭제</button>' +
       "</li>"

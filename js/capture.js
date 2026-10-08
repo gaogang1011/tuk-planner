@@ -107,7 +107,8 @@ Tuk.capture = (function () {
         '<input type="checkbox" class="p-pick" data-field="pick" aria-label="추가할 항목" ' + (it.pick ? "checked" : "") + ">" +
         '<button type="button" class="kind kind-' + it.type + ' kind-toggle" data-act="toggle" title="일정/할 일 바꾸기">' + (it.type === "event" ? "일정" : "할 일") + "</button>" +
         '<span class="p-title-wrap"><input class="p-title" data-field="title" value="' + fmt.escape(it.title) + '" aria-label="제목">' +
-          (it.owner ? '<span class="owner">' + fmt.escape(it.owner) + " 담당</span>" : "") + "</span>" +
+          (it.owner ? '<span class="owner">' + fmt.escape(it.owner) + " 담당</span>" : "") +
+          (it.repeat ? '<span class="owner">' + fmt.escape(Tuk.detail.repeatLabel(it.repeat)) + "</span>" : "") + "</span>" +
         '<input class="p-when" type="datetime-local" data-field="when" value="' + fmt.escape(when || "") + '" aria-label="' + (it.type === "event" ? "시작 시간" : "마감") + '">' +
         '<button type="button" class="p-del" data-act="drop" aria-label="빼기">빼기</button>' +
       "</li>"

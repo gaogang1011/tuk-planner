@@ -34,6 +34,19 @@ Tuk.store = (function () {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
 
+  function normalizeRepeat(r) {
+    if (!r || typeof r !== "object") return null;
+    const freq = ["daily", "weekdays", "weekly"].includes(r.freq) ? r.freq : null;
+    if (!freq) return null;
+    const out = { freq, interval: r.interval === 2 ? 2 : 1 };
+    if (freq === "weekly" && Array.isArray(r.days)) {
+      const days = r.days.map(Number).filter(n => n >= 0 && n <= 6);
+      if (days.length) out.days = Array.from(new Set(days)).sort();
+    }
+    if (typeof r.until === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.until)) out.until = r.until;
+    return out;
+  }
+
   function normalize(input) {
     const type = input.type === "event" ? "event" : "task";
     return {
@@ -43,6 +56,7 @@ Tuk.store = (function () {
       start: type === "event" ? (input.start || null) : null,
       end: type === "event" ? (input.end || null) : null,
       allDay: type === "event" && Boolean(input.allDay),
+      repeat: type === "event" ? normalizeRepeat(input.repeat) : null,
       due: type === "task" ? (input.due || null) : null,
       done: Boolean(input.done),
       source: input.source || "manual",

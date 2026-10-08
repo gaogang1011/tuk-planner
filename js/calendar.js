@@ -32,9 +32,46 @@ Tuk.cal = (function () {
     return Math.floor((d.getDate() + offset - 1) / 7) + 1;
   }
 
+  function matchesRepeat(r, base, d) {
+    if (r.until && fmt.dayKey(d) > r.until) return false;
+    if (r.freq === "daily") return true;
+    if (r.freq === "weekdays") return d.getDay() >= 1 && d.getDay() <= 5;
+    const days = r.days && r.days.length ? r.days : [base.getDay()];
+    if (!days.includes(d.getDay())) return false;
+    if (r.interval === 2) {
+      const weeks = Math.round((weekStart(d) - weekStart(base)) / (7 * 86400000));
+      return weeks % 2 === 0;
+    }
+    return true;
+  }
+
+  function expand(it, from, to, out) {
+    const s = fmt.parse(it.start);
+    if (!s) return;
+    const e0 = fmt.parse(it.end);
+    const dur = e0 && e0 > s ? e0 - s : 60 * 60000;
+    let d = fmt.startOfDay(s > from ? s : from);
+    const limit = fmt.startOfDay(to);
+    let guard = 0;
+    while (d <= limit && guard++ < 800) {
+      if (d >= fmt.startOfDay(s) && matchesRepeat(it.repeat, s, d)) {
+        const st = new Date(d);
+        st.setHours(s.getHours(), s.getMinutes(), 0, 0);
+        const en = new Date(st.getTime() + dur);
+        const visibleEnd = it.allDay ? addDays(fmt.startOfDay(st), 1) : en;
+        if (st < to && visibleEnd > from) out.push({ item: it, kind: "event", start: st, end: en, allDay: it.allDay, key: it.id + "@" + fmt.dayKey(st) });
+      }
+      d = addDays(d, 1);
+    }
+  }
+
   function occurrences(from, to, items) {
     const out = [];
     (items || store.all()).forEach(it => {
+      if (it.type === "event" && it.repeat) {
+        expand(it, from, to, out);
+        return;
+      }
       if (it.type === "event") {
         const s = fmt.parse(it.start);
         if (!s) return;

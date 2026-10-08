@@ -5,13 +5,12 @@ Tuk.now = (function () {
   const DEFAULT_MIN = 60;
 
   function spans(items) {
-    return items
-      .filter(it => it.type === "event" && !it.done && !it.allDay && fmt.parse(it.start))
-      .map(it => {
-        const s = fmt.parse(it.start);
-        const e = fmt.parse(it.end) || new Date(s.getTime() + DEFAULT_MIN * 60000);
-        return { item: it, start: s, end: e > s ? e : new Date(s.getTime() + DEFAULT_MIN * 60000) };
-      })
+    const now = new Date();
+    const from = new Date(fmt.startOfDay(now).getTime() - 86400000);
+    const to = new Date(fmt.startOfDay(now).getTime() + 60 * 86400000);
+    return Tuk.cal.occurrences(from, to, items || store.all())
+      .filter(o => o.kind === "event" && !o.allDay && !o.item.done)
+      .map(o => ({ item: o.item, start: o.start, end: o.end }))
       .sort((a, b) => a.start - b.start);
   }
 
@@ -126,7 +125,7 @@ Tuk.now = (function () {
   function render(el) {
     const now = new Date();
     const st = status(now);
-    const allDay = store.all().filter(it => it.type === "event" && it.allDay && !it.done && fmt.parse(it.start) && fmt.dayKey(fmt.parse(it.start)) === fmt.dayKey(now));
+    const allDay = Tuk.cal.occurrences(fmt.startOfDay(now), new Date(fmt.startOfDay(now).getTime() + 86400000)).filter(o => o.kind === "event" && o.allDay && !o.item.done).map(o => o.item);
     el.innerHTML =
       '<div class="now-head">' + headline(now, st) + "</div>" +
       (allDay.length ? '<p class="now-allday">오늘 종일: ' + allDay.map(it => fmt.escape(it.title)).join(", ") + "</p>" : "") +
