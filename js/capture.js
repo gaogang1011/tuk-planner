@@ -6,13 +6,27 @@ Tuk.capture = (function () {
   let pendingSource = "";
   let root;
 
+  let lastError = "";
+
   async function analyzeLine(text) {
+    lastError = "";
+    const cfg = Tuk.settings.effective();
+    if (cfg.enabled) {
+      try {
+        const items = await Tuk.ai.parseLine(cfg, text, new Date());
+        if (items.length) return { items, source: "ai" };
+        lastError = "AI가 항목을 찾지 못했어요.";
+      } catch (err) {
+        lastError = err.message;
+      }
+      return { items: parser.parse(text), source: "rule-fallback" };
+    }
     return { items: parser.parse(text), source: "rule" };
   }
 
   function sourceLabel(src) {
     if (src === "ai") return "AI가 정리했어요";
-    if (src === "rule-fallback") return "AI 연결에 실패해서 기본 규칙으로 정리했어요";
+    if (src === "rule-fallback") return (lastError ? lastError + " " : "") + "기본 규칙으로 대신 정리했어요";
     return "기본 규칙으로 정리했어요";
   }
 
@@ -123,5 +137,5 @@ Tuk.capture = (function () {
     bind();
   }
 
-  return { mount, set analyzeLine(fn) { analyzeLine = fn; }, get analyzeLine() { return analyzeLine; } };
+  return { mount };
 })();
