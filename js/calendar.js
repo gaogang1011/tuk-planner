@@ -76,6 +76,12 @@ Tuk.cal = (function () {
     setTimeout(() => { state.highlight = []; }, 2500);
   }
 
+  function flash(ids) {
+    state.highlight = ids || [];
+    emit();
+    setTimeout(() => { state.highlight = []; }, 2500);
+  }
+
   function select(key) {
     state.selected = key;
     emit();
@@ -157,5 +163,5 @@ Tuk.cal = (function () {
     });
   }
 
-  return { state, setView, shift, goToday, goTo, select, subscribe, occurrences, weekStart, monthGridStart, addDays, headerHtml, renderWeek, renderMonth, bindNav };
+  return { state, setView, shift, goToday, goTo, flash, select, subscribe, occurrences, weekStart, monthGridStart, addDays, headerHtml, renderWeek, renderMonth, bindNav };
 })();

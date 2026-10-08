@@ -36,10 +36,39 @@ Tuk.detail = (function () {
     return "반복";
   }
 
+  let creating = null;
+
+  function newHtml(start, end) {
+    return (
+      '<form method="dialog" class="detail-form">' +
+        '<h2 class="settings-title">새 일정</h2>' +
+        '<label class="field"><span>제목</span><input name="title" required placeholder="예: 팀 회의"></label>' +
+        '<label class="field"><span>시작</span><input name="start" type="datetime-local" value="' + start + '"></label>' +
+        '<label class="field"><span>끝</span><input name="end" type="datetime-local" value="' + end + '"></label>' +
+        '<div class="settings-actions">' +
+          '<button type="button" class="btn-ghost" data-act="close">닫기</button>' +
+          '<button type="submit" class="btn">추가</button>' +
+        "</div>" +
+      "</form>"
+    );
+  }
+
+  function openNew(start, minutes) {
+    const s = new Date(start);
+    const e = new Date(s.getTime() + (minutes || 60) * 60000);
+    creating = true;
+    currentId = null;
+    dialog.innerHTML = newHtml(fmt.toLocal(s), fmt.toLocal(e));
+    dialog.showModal();
+    const t = dialog.querySelector("[name=title]");
+    if (t) t.focus();
+  }
+
   function open(id) {
     const it = store.all().find(x => x.id === id);
     if (!it) return;
     currentId = id;
+    creating = null;
     dialog.innerHTML = html(it);
     dialog.showModal();
   }
@@ -59,6 +88,17 @@ Tuk.detail = (function () {
     });
     dialog.addEventListener("submit", e => {
       e.preventDefault();
+      if (creating) {
+        const f = new FormData(e.target);
+        const start = f.get("start") || null;
+        let end = f.get("end") || null;
+        if (end && start && end <= start) end = null;
+        const added = store.add({ type: "event", title: f.get("title"), start, end, source: "calendar" });
+        creating = null;
+        dialog.close();
+        if (Tuk.cal && start) Tuk.cal.flash([added.id]);
+        return;
+      }
       const it = store.all().find(x => x.id === currentId);
       if (!it) return dialog.close();
       const f = new FormData(e.target);
@@ -77,5 +117,5 @@ Tuk.detail = (function () {
     });
   }
 
-  return { mount, open, repeatLabel };
+  return { mount, open, openNew, repeatLabel };
 })();

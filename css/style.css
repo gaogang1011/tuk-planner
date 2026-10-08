@@ -795,3 +795,21 @@ button { cursor: pointer; }
 .repeat-badge { font-size: 12px; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; }
 
 .check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+
+.wk-col { cursor: cell; }
+
+.wk-free {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  border: 1.5px dashed color-mix(in srgb, var(--free) 55%, transparent);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.wk-free span { font-size: 11px; font-weight: 700; color: var(--free); opacity: 0.85; }
+
+.wk-legend { margin: 0; font-size: 12px; color: var(--muted); }

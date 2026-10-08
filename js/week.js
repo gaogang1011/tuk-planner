@@ -89,8 +89,21 @@ Tuk.week = (function () {
         return '<button type="button" class="' + cls + '" data-id="' + o.item.id + '" style="top:' + top + "px;height:" + h + "px;left:calc(" + (o.col * w) + "% + 2px);width:calc(" + w + '% - 4px)">' +
           '<span class="wk-ev-title">' + fmt.escape(o.item.title) + '</span><span class="wk-ev-time">' + fmt.time(o.start) + "–" + fmt.time(o.end) + "</span></button>";
       }).join("");
+      const free = [];
+      const dayStart = new Date(d.getTime() + 9 * 3600000);
+      const dayEnd = new Date(d.getTime() + 21 * 3600000);
+      let cursor = now > dayStart ? new Date(Math.ceil(now.getTime() / 1800000) * 1800000) : dayStart;
+      timed.slice().sort((a, b) => a.start - b.start).forEach(o => {
+        if (o.end <= cursor || o.start >= dayEnd) return;
+        if (o.start > cursor) free.push([cursor, o.start < dayEnd ? o.start : dayEnd]);
+        if (o.end > cursor) cursor = o.end;
+      });
+      if (cursor < dayEnd) free.push([cursor, dayEnd]);
+      const freeHtml = free.filter(([a, b]) => b - a >= 60 * 60000).map(([a, b]) =>
+        '<div class="wk-free" style="top:' + (y(a, startH) + 1) + "px;height:" + ((b - a) / 3600000 * HOUR_PX - 3) + 'px"><span>빈 ' + fmt.duration(b - a) + "</span></div>"
+      ).join("");
       const nowLine = isToday && now.getHours() >= startH ? '<div class="wk-now" style="top:' + y(now, startH) + 'px"></div>' : "";
-      cols += '<div class="wk-col' + dayClass + '" data-day="' + key + '">' + blocks + nowLine + "</div>";
+      cols += '<div class="wk-col' + dayClass + '" data-day="' + key + '" data-start="' + startH + '">' + freeHtml + blocks + nowLine + "</div>";
     });
 
     let gutter = "";
@@ -107,7 +120,8 @@ Tuk.week = (function () {
             cols +
           "</div>" +
         "</div>" +
-      "</div>";
+      "</div>" +
+      '<p class="wk-legend">점선은 09–21시 사이 1시간 이상 비는 시간이에요. 빈 칸을 누르면 그 시간에 일정을 추가해요.</p>';
 
     const scroller = el.querySelector("#wkScroll");
     const focusH = cal.state.highlight && cal.state.highlight.length
@@ -119,7 +133,14 @@ Tuk.week = (function () {
   function bind(el) {
     el.addEventListener("click", e => {
       const ev = e.target.closest(".wk-ev, .wk-chip");
-      if (ev) Tuk.detail.open(ev.dataset.id);
+      if (ev) { Tuk.detail.open(ev.dataset.id); return; }
+      const col = e.target.closest(".wk-col");
+      if (!col) return;
+      const rect = col.getBoundingClientRect();
+      const mins = Math.floor((e.clientY - rect.top) / HOUR_PX * 2) * 30;
+      const start = fmt.parse(col.dataset.day + "T00:00");
+      start.setMinutes(+col.dataset.start * 60 + mins);
+      Tuk.detail.openNew(start, 60);
     });
   }
 
