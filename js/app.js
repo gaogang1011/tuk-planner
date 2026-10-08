@@ -6,6 +6,8 @@
   const calBody = document.getElementById("calBody");
   const panel = document.getElementById("panel");
   const capture = document.getElementById("capture");
+  const miniCal = document.getElementById("miniCal");
+  const sbTasks = document.getElementById("sbTasks");
   const UI_KEY = "tuk.ui.v1";
   const narrow = window.matchMedia("(max-width: 1100px)");
   const phone = window.matchMedia("(max-width: 760px)");
@@ -66,6 +68,7 @@
   }
 
   function render() {
+    Tuk.sidebar.render(miniCal, sbTasks);
     renderHead();
     renderCal();
     renderPanel();
@@ -98,6 +101,7 @@
     if (e.key === "t" || e.key === "T") cal.goToday();
   });
 
+  Tuk.sidebar.mount(miniCal, sbTasks);
   Tuk.settings.mount(document.getElementById("openSettings"));
   Tuk.capture.mount(capture);
   views.bindList(panel, render);

@@ -1198,3 +1198,148 @@ body.dragging { cursor: grabbing; user-select: none; }
 
 
 
+
+.ic.sm { width: 22px; height: 22px; }
+
+.ic.sm svg { width: 15px; height: 15px; }
+
+.mc-head { display: flex; align-items: center; gap: 2px; padding: 2px 4px 4px 6px; }
+
+.mc-title { flex: 1; font-size: 13px; font-weight: 600; }
+
+.mc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+
+.mc-dow { text-align: center; font-size: 11px; color: var(--faint); padding: 2px 0; }
+
+.mc-dow.is-sat { color: var(--accent); }
+
+.mc-dow.is-sun { color: var(--due); }
+
+.mc-day {
+  position: relative;
+  border: 0;
+  background: none;
+  height: 28px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--ink);
+  padding: 0;
+}
+
+.mc-day:hover { background: var(--hover-strong); }
+
+.mc-day.is-out { color: var(--faint); }
+
+.mc-day.is-sat:not(.is-out) { color: var(--accent); }
+
+.mc-day.is-sun:not(.is-out) { color: var(--due); }
+
+.mc-day.is-range { background: var(--hover-strong); border-radius: 0; }
+
+.mc-day.is-today { background: var(--due); color: #fff !important; font-weight: 700; border-radius: 6px; }
+
+.mc-day i {
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 3px;
+  height: 3px;
+  margin-left: -1.5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.sb-sec-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.sb-sec-head span:first-child { flex: 1; }
+
+.sb-count { font-size: 11px; color: var(--faint); font-weight: 500; margin-left: auto; }
+
+.tk-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-sm);
+  color: var(--faint);
+}
+
+.tk-add:focus-within { background: var(--bg); box-shadow: 0 0 0 1px var(--line); }
+
+.tk-add input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: 5px 0;
+  font-size: 13px;
+  outline: none;
+}
+
+.tk-add input::placeholder { color: var(--faint); }
+
+.tk-ghead {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: left;
+}
+
+.tk-ghead:hover { background: var(--hover-strong); }
+
+.tw { width: 12px; font-size: 10px; color: var(--faint); }
+
+.tk-group.is-overdue .tk-ghead { color: var(--due); }
+
+.tk-list { list-style: none; margin: 0 0 4px; padding: 0; }
+
+.tk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px 3px 22px;
+  border-radius: var(--radius-sm);
+}
+
+.tk:hover { background: var(--hover-strong); }
+
+.tk-check { width: 14px; height: 14px; margin: 0; accent-color: var(--accent); flex: none; }
+
+.tk-title {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: 2px 0;
+  text-align: left;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tk-due { font-size: 11px; color: var(--faint); flex: none; }
+
+.is-overdue .tk-due { color: var(--due); }
+
+.tk.is-done .tk-title { text-decoration: line-through; color: var(--faint); }
+
+.sb-empty { margin: 4px 8px; font-size: 13px; color: var(--faint); }
