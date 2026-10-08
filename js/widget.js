@@ -28,18 +28,77 @@ Tuk.widget = (function () {
     });
   }
 
+  function shell() {
+    root.innerHTML =
+      '<header class="wg-head"><span class="brand">툭</span><span class="wg-clock" data-w="clock"></span></header>' +
+      '<section class="wg-next" data-w="next"></section>' +
+      '<section class="wg-sec"><h3 class="rp-title">오늘 남은 일정</h3><div data-w="events"></div></section>' +
+      '<section class="wg-sec"><h3 class="rp-title">할 일</h3><div data-w="tasks"></div></section>' +
+      '<form class="wg-add" data-w="add"><input autocomplete="off" placeholder="툭 던져 두기: 4시 팀 회의" aria-label="한 줄 추가"><button type="submit" class="btn">추가</button></form>' +
+      '<p class="wg-msg" data-w="msg" aria-live="polite"></p>';
+    root.addEventListener("change", e => {
+      const id = e.target.dataset.toggle;
+      if (id) Tuk.store.toggle(id);
+    });
+    root.addEventListener("click", e => {
+      const o = e.target.closest("[data-open]");
+      if (o) {
+        Tuk.detail.open(o.dataset.open);
+        try { window.focus(); } catch (err) {}
+      }
+    });
+    root.querySelector('[data-w="add"]').addEventListener("submit", async e => {
+      e.preventDefault();
+      const input = e.target.querySelector("input");
+      const text = input.value.trim();
+      if (!text) return;
+      input.disabled = true;
+      try {
+        const r = await Tuk.capture.analyzeLine(text);
+        const items = r.items.length ? r.items : [{ type: "task", title: text }];
+        const added = Tuk.store.addMany(items.map(it => Object.assign({ source: "widget" }, it)));
+        input.value = "";
+        const msg = root.querySelector('[data-w="msg"]');
+        msg.textContent = added.map(a => a.title).join(", ") + " 추가했어요";
+        setTimeout(() => { if (msg.isConnected) msg.textContent = ""; }, 3000);
+      } finally {
+        input.disabled = false;
+        input.focus();
+      }
+    });
+  }
+
+  function part(name) {
+    return root && root.querySelector('[data-w="' + name + '"]');
+  }
+
   function render() {
     if (!root) return;
     const now = new Date();
     const st = Tuk.now.status(now);
     const next = st.current || st.next;
-    root.innerHTML =
-      '<header class="wg-head"><span class="brand">툭</span><span class="wg-clock">' + fmt.time(now) + "</span></header>" +
-      '<section class="wg-next">' +
-        (next
-          ? '<p class="wg-kicker">' + (st.current ? "진행 중" : "다음 일정까지") + '</p><p class="wg-big">' + fmt.duration((st.current ? next.end : next.start) - now) + '</p><p class="wg-sub">' + fmt.escape(fmt.shortDate(next.start) + " · " + next.item.title) + "</p>"
-          : '<p class="wg-kicker">다음 일정</p><p class="wg-big is-quiet">없어요</p>') +
-      "</section>";
+    part("clock").textContent = now.toLocaleString("ko-KR", { month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit" });
+    part("next").innerHTML = next
+      ? '<p class="wg-kicker">' + (st.current ? "지금 진행 중 · 남은 시간" : "다음 일정까지") + '</p><p class="wg-big">' + fmt.duration((st.current ? next.end : next.start) - now) + '</p><p class="wg-sub">' + fmt.escape((st.current ? fmt.time(next.start) + "–" + fmt.time(next.end) : fmt.shortDate(next.start)) + " · " + next.item.title) + "</p>"
+      : '<p class="wg-kicker">다음 일정</p><p class="wg-big is-quiet">잡힌 일정이 없어요</p>';
+    const dayEnd = new Date(fmt.startOfDay(now).getTime() + 86400000);
+    const today = st.list.filter(x => x.end > now && x.start < dayEnd);
+    const pastCount = st.list.filter(x => x.end <= now && fmt.dayKey(x.start) === fmt.dayKey(now)).length;
+    part("events").innerHTML = (today.length
+      ? '<ul class="wg-list">' + today.map(x =>
+          '<li><button type="button" class="wg-ev' + (x.start <= now ? " is-now" : "") + '" data-open="' + x.item.id + '"><span class="ag-time">' + fmt.time(x.start) + '</span><span class="wg-t">' + fmt.escape(x.item.title) + "</span></button></li>").join("") + "</ul>"
+      : '<p class="empty">오늘 남은 일정이 없어요.</p>') +
+      (pastCount ? '<p class="wg-note">지난 일정 ' + pastCount + "개</p>" : "");
+    const tasks = Tuk.store.all().filter(it => it.type === "task" && !it.done).filter(it => {
+      const g = Tuk.sidebar.groupOf(it, now);
+      return g === "overdue" || g === "today";
+    }).sort((a, b) => fmt.parse(a.due) - fmt.parse(b.due));
+    part("tasks").innerHTML = tasks.length
+      ? '<ul class="wg-list">' + tasks.map(it => {
+          const late = fmt.parse(it.due) < now;
+          return '<li class="wg-task"><input type="checkbox" class="ag-check" data-toggle="' + it.id + '" aria-label="완료"><button type="button" class="wg-t" data-open="' + it.id + '">' + fmt.escape(it.title) + '</button><span class="tk-due' + (late ? " is-late" : "") + '">' + (late ? "지남" : fmt.escape(Tuk.sidebar.dueLabel(it))) + "</span></li>";
+        }).join("") + "</ul>"
+      : '<p class="empty">오늘 마감인 할 일이 없어요.</p>';
   }
 
   function syncButtons() {
@@ -67,6 +126,7 @@ Tuk.widget = (function () {
     root = doc.createElement("div");
     root.className = "wg";
     doc.body.appendChild(root);
+    shell();
     pip.addEventListener("pagehide", () => {
       pip = null;
       root = null;
