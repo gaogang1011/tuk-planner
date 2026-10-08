@@ -129,8 +129,7 @@ Tuk.now = (function () {
     el.innerHTML =
       '<div class="now-head">' + headline(now, st) + "</div>" +
       (allDay.length ? '<p class="now-allday">오늘 종일: ' + allDay.map(it => fmt.escape(it.title)).join(", ") + "</p>" : "") +
-      ribbon(now, st.list) +
-      '<p class="rb-legend"><span class="lg lg-event"></span>일정 <span class="lg lg-free"></span>빈 시간</p>';
+      ribbon(now, st.list);
   }
 
   let aiBrief = null;
@@ -179,7 +178,7 @@ Tuk.now = (function () {
     } catch (err) {
       aiBrief = { day: fmt.dayKey(now), text: "", error: err.message };
     }
-    const el = btn.closest(".panel");
+    const el = document.getElementById("todayBody");
     if (el) renderToday(el);
   }
 
@@ -195,48 +194,78 @@ Tuk.now = (function () {
     );
   }
 
+  function agendaHtml(now, st) {
+    const dayStart = fmt.startOfDay(now);
+    const dayEnd = new Date(dayStart.getTime() + 86400000);
+    const occ = Tuk.cal.occurrences(dayStart, dayEnd).filter(o => o.kind === "event" && !o.item.done);
+    const allDay = occ.filter(o => o.allDay);
+    const timed = occ.filter(o => !o.allDay).sort((a, b) => a.start - b.start);
+    const dueToday = store.all().filter(it => it.type === "task" && !it.done && fmt.parse(it.due) && fmt.dayKey(fmt.parse(it.due)) === fmt.dayKey(now));
+    const rows = [];
+    allDay.forEach(o => rows.push({ at: dayStart, html: '<button type="button" class="ag-row ag-allday" data-open="' + o.item.id + '"><span class="ag-time">종일</span><span class="ag-title">' + fmt.escape(o.item.title) + "</span></button>" }));
+    let cursor = new Date(Math.max(now.getTime(), dayStart.getTime() + 9 * 3600000));
+    timed.forEach(o => {
+      if (o.end > now && o.start > cursor && o.start - cursor >= 30 * 60000) {
+        rows.push({ at: cursor, html: '<div class="ag-row ag-free"><span class="ag-time">' + fmt.time(cursor) + '</span><span class="ag-title">빈 시간 ' + fmt.duration(o.start - cursor) + "</span></div>" });
+      }
+      if (o.end > cursor) cursor = o.end;
+      const state = o.end <= now ? " is-past" : o.start <= now ? " is-now" : "";
+      rows.push({ at: o.start, html:
+        '<button type="button" class="ag-row ag-event' + state + '" data-open="' + o.item.id + '">' +
+          '<span class="ag-time">' + fmt.time(o.start) + '<small>' + fmt.time(o.end) + "</small></span>" +
+          '<span class="ag-title">' + fmt.escape(o.item.title) + (state === " is-now" ? '<em class="ag-badge">진행 중</em>' : "") + "</span>" +
+        "</button>" });
+    });
+    dueToday.forEach(it => {
+      const d = fmt.parse(it.due);
+      const late = d.getHours() === 23 && d.getMinutes() === 59;
+      rows.push({ at: late ? dayEnd : d, html:
+        '<div class="ag-row ag-task' + (d < now ? " is-late" : "") + '" data-id="' + it.id + '">' +
+          '<span class="ag-time">' + (late ? "오늘 중" : fmt.time(d)) + "</span>" +
+          '<label class="ag-title"><input type="checkbox" class="ag-check" data-toggle="' + it.id + '" aria-label="완료"> ' + fmt.escape(it.title) + "</label>" +
+        "</div>" });
+    });
+    rows.sort((a, b) => a.at - b.at);
+    return rows.length ? '<div class="ag">' + rows.map(r => r.html).join("") + "</div>" : '<p class="empty">오늘 잡힌 일정과 마감이 없어요.</p>';
+  }
+
   function renderToday(el) {
     const now = new Date();
     const st = status(now);
     const gaps = freeGaps(now, st.list, 20);
     const picks = suggestions(now);
     const first = gaps[0];
-    let html = '<h2 class="panel-title">오늘 브리핑</h2>' + briefHtml(now) + '<h2 class="panel-title gap-title">빈 시간에 할 일</h2>';
+    let html = '<section class="rp-sec"><h3 class="rp-title">오늘 일정</h3>' + agendaHtml(now, st) + "</section>";
+    html += '<section class="rp-sec"><h3 class="rp-title">빈 시간에 할 일</h3>';
     if (first) {
       const startsNow = first.start - now < 60000;
-      html +=
-        '<p class="gap-lead"><strong>' + (startsNow ? "지금" : fmt.time(first.start)) + "부터 " + (first.until ? fmt.time(first.end) + "까지" : "오늘 끝까지") + "</strong> " +
-        fmt.duration(first.end - first.start) + " 비어 있어요." + (first.until ? " 다음은 " + fmt.escape(first.until.title) + "." : "") + "</p>";
+      html += '<p class="gap-lead"><strong>' + (startsNow ? "지금" : fmt.time(first.start)) + "부터 " + (first.until ? fmt.time(first.end) + "까지" : "오늘 끝까지") + "</strong> " + fmt.duration(first.end - first.start) + " 비어 있어요.</p>";
     } else {
       html += '<p class="gap-lead">오늘은 더 이상 빈 시간이 없어요.</p>';
     }
-    if (picks.length) {
-      html += '<ul class="items picks">' + picks.map(p =>
-        Tuk.views.itemRow(p.item, true).replace('<span class="item-meta">', '<span class="item-meta">' + (p.u.label ? '<span class="urg urg-' + p.u.score + '">' + p.u.label + "</span>" : ""))
-      ).join("") + "</ul>";
-    } else {
-      html += '<p class="empty">남은 할 일이 없어요. 빈 시간은 쉬어도 좋아요.</p>';
-    }
-    if (gaps.length > 1) {
-      html += '<h3 class="day-label later">오늘 나머지 빈 시간</h3><ul class="gap-list">' +
-        gaps.slice(1).map(g => "<li>" + fmt.time(g.start) + "–" + (g.until ? fmt.time(g.end) : "24:00") + ' <span>' + fmt.duration(g.end - g.start) + "</span></li>").join("") +
-        "</ul>";
-    }
-    const restEvents = st.list.filter(x => fmt.dayKey(x.start) === fmt.dayKey(now) && x.end > now);
-    const dueToday = store.all().filter(it => it.type === "task" && !it.done && fmt.parse(it.due) && fmt.dayKey(fmt.parse(it.due)) === fmt.dayKey(now) && fmt.parse(it.due) >= now);
-    html += '<h2 class="panel-title rest-title">오늘 남은 것</h2>';
-    if (!restEvents.length && !dueToday.length) {
-      html += '<p class="empty">오늘 남은 일정과 마감이 없어요.</p>';
-    } else {
-      const rows = restEvents.map(x => ({ at: x.start, kind: "event", label: "일정", title: x.item.title }))
-        .concat(dueToday.map(it => ({ at: fmt.parse(it.due), kind: "task", label: "마감", title: it.title })))
-        .sort((a, b) => a.at - b.at);
-      html += '<ul class="rest">' +
-        rows.map(r => '<li><span class="rest-time">' + fmt.time(r.at) + '</span><span class="kind kind-' + r.kind + '">' + r.label + "</span>" + fmt.escape(r.title) + "</li>").join("") +
-        "</ul>";
-    }
+    html += picks.length
+      ? '<ul class="picks">' + picks.map(p =>
+          '<li class="pick" data-id="' + p.item.id + '">' +
+            '<input type="checkbox" class="ag-check" data-toggle="' + p.item.id + '" aria-label="완료">' +
+            '<button type="button" class="pick-title" data-open="' + p.item.id + '">' + fmt.escape(p.item.title) + "</button>" +
+            (p.u.label ? '<span class="urg urg-' + p.u.score + '">' + p.u.label + "</span>" : "") +
+          "</li>").join("") + "</ul>"
+      : '<p class="empty">남은 할 일이 없어요.</p>';
+    html += "</section>";
+    html += '<section class="rp-sec"><h3 class="rp-title">브리핑</h3>' + briefHtml(now) + "</section>";
     el.innerHTML = html;
   }
 
-  return { render, renderToday, requestAiBrief, templateBrief, status, spans, freeGaps, suggestions, urgency, DEFAULT_MIN };
+  function bindPanel(el) {
+    el.addEventListener("change", e => {
+      const t = e.target.dataset.toggle;
+      if (t) store.toggle(t);
+    });
+    el.addEventListener("click", e => {
+      const o = e.target.closest("[data-open]");
+      if (o) Tuk.detail.open(o.dataset.open);
+    });
+  }
+
+  return { render, renderToday, bindPanel, requestAiBrief, templateBrief, status, spans, freeGaps, suggestions, urgency, DEFAULT_MIN };
 })();

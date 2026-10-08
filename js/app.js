@@ -104,7 +104,7 @@
   Tuk.sidebar.mount(miniCal, sbTasks);
   Tuk.settings.mount(document.getElementById("openSettings"));
   Tuk.capture.mount(capture);
-  views.bindList(panel, render);
+  Tuk.now.bindPanel(panel);
   panel.addEventListener("click", e => {
     if (e.target.dataset.brief === "ai") Tuk.now.requestAiBrief(e.target);
   });
