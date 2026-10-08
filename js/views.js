@@ -11,7 +11,10 @@ Tuk.views = (function () {
   function itemWhen(it, withDay) {
     const d = itemDate(it);
     if (!d) return it.type === "event" ? "시간 미정" : "마감 없음";
-    const text = withDay === false ? fmt.time(d) : fmt.shortDate(d);
+    if (it.allDay) return withDay === false ? "종일" : fmt.shortDate(d).replace(/\s\d{2}:\d{2}$/, "") + " 종일";
+    let text = withDay === false ? fmt.time(d) : fmt.shortDate(d);
+    const e = it.type === "event" && fmt.parse(it.end);
+    if (e) text += "–" + fmt.time(e);
     return it.type === "task" ? text + "까지" : text;
   }
 
@@ -111,7 +114,7 @@ Tuk.views = (function () {
     const f = new FormData(form);
     const type = f.get("type");
     const when = f.get("when") || null;
-    return { type, title: f.get("title"), start: type === "event" ? when : null, due: type === "task" ? when : null };
+    return { type, title: f.get("title"), start: type === "event" ? when : null, due: type === "task" ? when : null, allDay: false };
   }
 
   function bindList(el, rerender) {
@@ -141,7 +144,10 @@ Tuk.views = (function () {
       } else if (e.target.classList.contains("edit-form")) {
         const id = editingId;
         editingId = null;
-        store.update(id, readForm(e.target));
+        const patch = readForm(e.target);
+        const old = store.all().find(x => x.id === id);
+        if (old && old.start !== patch.start) patch.end = null;
+        store.update(id, patch);
       }
     });
   }

@@ -42,6 +42,7 @@ Tuk.store = (function () {
       title: String(input.title || "").trim() || (type === "event" ? "새 일정" : "새 할 일"),
       start: type === "event" ? (input.start || null) : null,
       end: type === "event" ? (input.end || null) : null,
+      allDay: type === "event" && Boolean(input.allDay),
       due: type === "task" ? (input.due || null) : null,
       done: Boolean(input.done),
       source: input.source || "manual",
