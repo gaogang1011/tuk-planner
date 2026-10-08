@@ -1,5 +1,5 @@
 (function () {
-  const { store, views, fmt } = Tuk;
+  const { store } = Tuk;
   const cal = Tuk.cal;
   const app = document.getElementById("app");
   const head = document.getElementById("mainHead");
@@ -136,7 +136,6 @@
   Tuk.drag.bind(calBody, ".wk-ev, .wk-chip, .mo-chip", "auto");
   Tuk.week.bind(calBody);
   Tuk.month.bind(calBody);
-  views.bindList(calBody, render);
   cal.bindNav(head);
   cal.subscribe(render);
   store.subscribe(render);

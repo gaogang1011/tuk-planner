@@ -154,7 +154,7 @@ Tuk.week = (function () {
         return '<button type="button" class="' + cls + '" data-id="' + o.item.id + '" style="top:' + top + "px;height:" + h + "px;left:calc(" + (o.col * w) + "% + 2px);width:calc(" + w + '% - 4px)">' +
           '<span class="wk-ev-title">' + fmt.escape(o.item.title) + '</span><span class="wk-ev-time">' + fmt.time(o.start) + "–" + fmt.time(o.end) + "</span></button>";
       }).join("");
-      const free = freeOf(d, timed, now);
+      const free = timed.length ? freeOf(d, timed, now) : [];
       const freeHtml = free.map(([a, b]) =>
         '<div class="wk-free" style="top:' + (y(a, startH) + 1) + "px;height:" + ((b - a) / 3600000 * HOUR_PX - 3) + 'px"><span>빈 ' + fmt.duration(b - a) + "</span></div>"
       ).join("");

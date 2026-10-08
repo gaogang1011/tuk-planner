@@ -91,8 +91,7 @@ Tuk.month = (function () {
     } else {
       cal.flash(added.map(a => a.id));
     }
-    const m = document.getElementById("dayAddMsg");
-    if (m) m.textContent = added.length + "개 추가했어요.";
+    if (Tuk.drag) Tuk.drag.toast(added.length + "개 추가했어요");
   }
 
   function bindPanel(el) {
