@@ -7,7 +7,7 @@
 - [x] Todo 리스트 작성
 
 ## 1. 기본 구조
-- [ ] 프로젝트 기본 구조 만들기 (index.html, style.css, js 폴더, README)
+- [x] 프로젝트 기본 구조 만들기 (index.html, style.css, js 폴더, README)
 - [ ] 데이터 모델과 localStorage 저장소 만들기
 
 ## 2. 목록 관리 (F4)
