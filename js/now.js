@@ -22,6 +22,37 @@ Tuk.now = (function () {
     return { list, current, next };
   }
 
+  function freeGaps(now, list, minMin) {
+    const end = new Date(fmt.startOfDay(now).getTime() + 24 * 3600000);
+    const gaps = [];
+    let cursor = now;
+    list.forEach(x => {
+      if (x.end <= cursor || x.start >= end) return;
+      if (x.start > cursor) gaps.push({ start: cursor, end: x.start, until: x.item });
+      if (x.end > cursor) cursor = x.end;
+    });
+    if (cursor < end) gaps.push({ start: cursor, end, until: null });
+    return gaps.filter(g => g.end - g.start >= (minMin || 20) * 60000);
+  }
+
+  function urgency(task, now) {
+    const d = fmt.parse(task.due);
+    if (!d) return { score: 4, label: "" };
+    if (d < now) return { score: 0, label: "마감 지남" };
+    const diff = fmt.dayDiff(d, now);
+    if (diff === 0) return { score: 1, label: "오늘 마감" };
+    if (diff === 1) return { score: 2, label: "내일 마감" };
+    return { score: 3, label: diff + "일 남음" };
+  }
+
+  function suggestions(now, items, limit) {
+    return (items || store.all())
+      .filter(it => it.type === "task" && !it.done)
+      .map(it => ({ item: it, u: urgency(it, now) }))
+      .sort((a, b) => a.u.score - b.u.score || ((fmt.parse(a.item.due) || Infinity) - (fmt.parse(b.item.due) || Infinity)))
+      .slice(0, limit || 3);
+  }
+
   function windowOf(now, list) {
     const day = fmt.startOfDay(now);
     const todays = list.filter(x => fmt.dayKey(x.start) === fmt.dayKey(now));
@@ -39,6 +70,12 @@ Tuk.now = (function () {
 
   function ribbon(now, list) {
     const w = windowOf(now, list);
+    const free = freeGaps(now, list, 30).map(g => {
+      const left = pct(g.start, w);
+      const width = pct(g.end, w) - left;
+      const label = width > 9 ? fmt.duration(g.end - g.start) : "";
+      return '<div class="rb-free" style="left:' + left + "%;width:" + width + '%"><span>' + label + "</span></div>";
+    }).join("");
     const blocks = w.todays.map(x => {
       const left = pct(x.start, w);
       const width = Math.max(0.8, pct(x.end, w) - left);
@@ -54,6 +91,7 @@ Tuk.now = (function () {
       '<div class="ribbon" aria-hidden="true">' +
         '<div class="rb-track">' +
           '<div class="rb-past" style="width:' + pct(now, w) + '%"></div>' +
+          free +
           blocks +
           '<div class="rb-now" style="left:' + pct(now, w) + '%"></div>' +
         "</div>" +
@@ -92,8 +130,52 @@ Tuk.now = (function () {
     el.innerHTML =
       '<div class="now-head">' + headline(now, st) + "</div>" +
       (allDay.length ? '<p class="now-allday">오늘 종일: ' + allDay.map(it => fmt.escape(it.title)).join(", ") + "</p>" : "") +
-      ribbon(now, st.list);
+      ribbon(now, st.list) +
+      '<p class="rb-legend"><span class="lg lg-event"></span>일정 <span class="lg lg-free"></span>빈 시간</p>';
   }
 
-  return { render, status, spans, DEFAULT_MIN };
+  function renderToday(el) {
+    const now = new Date();
+    const st = status(now);
+    const gaps = freeGaps(now, st.list, 20);
+    const picks = suggestions(now);
+    const first = gaps[0];
+    let html = '<h2 class="panel-title">빈 시간에 할 일</h2>';
+    if (first) {
+      const startsNow = first.start - now < 60000;
+      html +=
+        '<p class="gap-lead"><strong>' + (startsNow ? "지금" : fmt.time(first.start)) + "부터 " + (first.until ? fmt.time(first.end) + "까지" : "오늘 끝까지") + "</strong> " +
+        fmt.duration(first.end - first.start) + " 비어 있어요." + (first.until ? " 다음은 " + fmt.escape(first.until.title) + "." : "") + "</p>";
+    } else {
+      html += '<p class="gap-lead">오늘은 더 이상 빈 시간이 없어요.</p>';
+    }
+    if (picks.length) {
+      html += '<ul class="items picks">' + picks.map(p =>
+        Tuk.views.itemRow(p.item, true).replace('<span class="item-meta">', '<span class="item-meta">' + (p.u.label ? '<span class="urg urg-' + p.u.score + '">' + p.u.label + "</span>" : ""))
+      ).join("") + "</ul>";
+    } else {
+      html += '<p class="empty">남은 할 일이 없어요. 빈 시간은 쉬어도 좋아요.</p>';
+    }
+    if (gaps.length > 1) {
+      html += '<h3 class="day-label later">오늘 나머지 빈 시간</h3><ul class="gap-list">' +
+        gaps.slice(1).map(g => "<li>" + fmt.time(g.start) + "–" + (g.until ? fmt.time(g.end) : "24:00") + ' <span>' + fmt.duration(g.end - g.start) + "</span></li>").join("") +
+        "</ul>";
+    }
+    const restEvents = st.list.filter(x => fmt.dayKey(x.start) === fmt.dayKey(now) && x.end > now);
+    const dueToday = store.all().filter(it => it.type === "task" && !it.done && fmt.parse(it.due) && fmt.dayKey(fmt.parse(it.due)) === fmt.dayKey(now) && fmt.parse(it.due) >= now);
+    html += '<h2 class="panel-title rest-title">오늘 남은 것</h2>';
+    if (!restEvents.length && !dueToday.length) {
+      html += '<p class="empty">오늘 남은 일정과 마감이 없어요.</p>';
+    } else {
+      const rows = restEvents.map(x => ({ at: x.start, kind: "event", label: "일정", title: x.item.title }))
+        .concat(dueToday.map(it => ({ at: fmt.parse(it.due), kind: "task", label: "마감", title: it.title })))
+        .sort((a, b) => a.at - b.at);
+      html += '<ul class="rest">' +
+        rows.map(r => '<li><span class="rest-time">' + fmt.time(r.at) + '</span><span class="kind kind-' + r.kind + '">' + r.label + "</span>" + fmt.escape(r.title) + "</li>").join("") +
+        "</ul>";
+    }
+    el.innerHTML = html;
+  }
+
+  return { render, renderToday, status, spans, freeGaps, suggestions, urgency, DEFAULT_MIN };
 })();

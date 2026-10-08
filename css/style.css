@@ -508,3 +508,55 @@ button { cursor: pointer; }
   font-size: 11px;
   color: var(--now-muted);
 }
+
+.rb-free {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  border-radius: 6px;
+  border: 1.5px dashed var(--now-free);
+  color: var(--now-free);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.rb-legend { margin: 6px 0 0; font-size: 12px; color: var(--now-muted); display: flex; align-items: center; gap: 6px; }
+
+.lg { display: inline-block; width: 12px; height: 8px; border-radius: 2px; }
+
+.lg-event { background: var(--now-event); }
+
+.lg-free { border: 1.5px dashed var(--now-free); margin-left: 8px; }
+
+.gap-lead { margin: 0 0 8px; font-size: 15px; }
+
+.gap-lead strong { color: var(--free); }
+
+.urg { font-size: 12px; font-weight: 700; }
+
+.urg-0 { color: var(--due); }
+
+.urg-1 { color: var(--due); }
+
+.urg-2 { color: var(--ink); }
+
+.urg-3 { color: var(--muted); }
+
+.later { margin-top: 18px; }
+
+.gap-list { list-style: none; margin: 0; padding: 0; font-size: 14px; display: grid; gap: 2px; }
+
+.gap-list span { color: var(--muted); }
+
+.rest-title { margin-top: 24px; }
+
+.rest { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 15px; }
+
+.rest li { display: flex; align-items: center; gap: 8px; }
+
+.rest-time { width: 44px; flex: none; color: var(--muted); font-size: 14px; }

@@ -4,6 +4,7 @@
   const upcoming = document.getElementById("upcoming");
   const capture = document.getElementById("capture");
   const nowEl = document.getElementById("now");
+  const todayEl = document.getElementById("today");
 
   function tick() {
     const now = new Date();
@@ -14,14 +15,16 @@
 
   function render() {
     Tuk.now.render(nowEl);
+    Tuk.now.renderToday(todayEl);
     views.renderList(upcoming);
   }
 
   Tuk.settings.mount(document.getElementById("openSettings"));
   Tuk.capture.mount(capture);
   views.bindList(upcoming, render);
+  views.bindList(todayEl, render);
   store.subscribe(render);
   render();
   tick();
-  setInterval(() => { tick(); Tuk.now.render(nowEl); }, 30000);
+  setInterval(() => { tick(); Tuk.now.render(nowEl); Tuk.now.renderToday(todayEl); }, 30000);
 })();
